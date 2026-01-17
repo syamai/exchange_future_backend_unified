@@ -1,0 +1,67 @@
+# Multi-stage build for Sharded Matching Engine
+# Stage 1: Build
+FROM maven:3.8-eclipse-temurin-17 AS builder
+
+WORKDIR /build
+
+# Copy pom.xml first for dependency caching
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source and build
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+# Stage 2: Runtime
+FROM eclipse-temurin:17-jre
+
+LABEL maintainer="exchange-team"
+LABEL description="Sharded Matching Engine"
+LABEL version="1.0"
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create directories
+RUN mkdir -p /app/logs /app/heapdumps /app/config
+
+# Copy JAR from builder
+COPY --from=builder /build/target/MatchingEngine-1.0-shaded.jar /app/matching-engine.jar
+
+# Environment variables with defaults
+ENV SHARD_ID=shard-1
+ENV SHARD_ROLE=primary
+ENV ASSIGNED_SYMBOLS=BTCUSDT,BTCBUSD
+ENV KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+ENV HEALTH_PORT=8080
+ENV METRICS_PORT=9090
+
+# JVM settings
+ENV JAVA_OPTS="-Xms4g -Xmx4g \
+    -XX:+UseZGC \
+    -XX:+ZGenerational \
+    -Xlog:gc*:file=/app/logs/gc.log:time,uptime,level,tags \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/app/heapdumps \
+    -Djava.net.preferIPv4Stack=true"
+
+# Expose ports
+# 8080: Health check
+# 9090: Prometheus metrics
+EXPOSE 8080 9090
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${HEALTH_PORT}/health/live || exit 1
+
+# Entry point - use ShardedMatchingEngineCLI explicitly
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -cp /app/matching-engine.jar \
+    com.sotatek.future.ShardedMatchingEngineCLI \
+    --shard-id=$SHARD_ID \
+    --role=$SHARD_ROLE \
+    --symbols=$ASSIGNED_SYMBOLS \
+    --kafka=$KAFKA_BOOTSTRAP_SERVERS \
+    --health-port=$HEALTH_PORT \
+    --metrics-port=$METRICS_PORT"]

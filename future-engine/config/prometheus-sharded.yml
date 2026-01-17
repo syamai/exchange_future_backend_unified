@@ -1,0 +1,54 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+rule_files:
+  # - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # Shard 1: BTC Pairs
+  - job_name: 'matching-engine-shard-1'
+    static_configs:
+      - targets: ['me-shard-1-primary:9090']
+        labels:
+          shard: 'shard-1'
+          role: 'primary'
+      - targets: ['me-shard-1-standby:9090']
+        labels:
+          shard: 'shard-1'
+          role: 'standby'
+
+  # Shard 2: ETH Pairs
+  - job_name: 'matching-engine-shard-2'
+    static_configs:
+      - targets: ['me-shard-2-primary:9090']
+        labels:
+          shard: 'shard-2'
+          role: 'primary'
+      - targets: ['me-shard-2-standby:9090']
+        labels:
+          shard: 'shard-2'
+          role: 'standby'
+
+  # Shard 3: Other Pairs
+  - job_name: 'matching-engine-shard-3'
+    static_configs:
+      - targets: ['me-shard-3-primary:9090']
+        labels:
+          shard: 'shard-3'
+          role: 'primary'
+      - targets: ['me-shard-3-standby:9090']
+        labels:
+          shard: 'shard-3'
+          role: 'standby'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

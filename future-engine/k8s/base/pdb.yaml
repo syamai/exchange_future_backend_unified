@@ -1,0 +1,51 @@
+---
+# PodDisruptionBudget for Shard 1
+# Ensures at least 1 pod is always running during voluntary disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: matching-engine-shard-1-pdb
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: matching-engine
+      app.kubernetes.io/component: shard-1
+
+---
+# PodDisruptionBudget for Shard 2
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: matching-engine-shard-2-pdb
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: matching-engine
+      app.kubernetes.io/component: shard-2
+
+---
+# PodDisruptionBudget for Shard 3
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: matching-engine-shard-3-pdb
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-3
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: matching-engine
+      app.kubernetes.io/component: shard-3

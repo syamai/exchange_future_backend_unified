@@ -1,0 +1,224 @@
+{
+  "apps": [
+    {
+      "name": "solana-sota-dex-balance-history",
+      "script": "yarn",
+      "args": "console:dev account:daily-balance",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "save-balance-from-spot",
+      "script": "yarn",
+      "args": "console:dev future:referral_reward",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "deposit-to-future",
+      "script": "yarn",
+      "args": "console:dev future:transfer",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-anti-phishing-code-from-spot",
+      "script": "yarn",
+      "args": "console:dev future:sync-anti-phishing-code",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-device-token",
+      "script": "yarn",
+      "args": "console:dev future:sync-device-token",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-locale-user",
+      "script": "yarn",
+      "args": "console:dev future:sync-locale-user",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-user-from-spot",
+      "script": "yarn",
+      "args": "console:dev future:sync-user",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-funding",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-funding",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-margin-histories",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-margin-histories",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-position-histories",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-position-histories",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-transactions",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-transactions",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sota-dex-matching-engine-save-margin-leverage",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-margin-leverage",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "cron-job-remove-market-data",
+      "script": "yarn",
+      "args": "console:dev cron-job:remove-market-data",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "cron-job-remove-market-indices",
+      "script": "yarn",
+      "args": "console:dev cron-job:remove-market-indices",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "remove-only-bot-orders",
+      "script": "yarn",
+      "args": "console:dev bot:remove-bot-orders 200 2500",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "remove-only-bot-orders-using-user-trade-table",
+      "script": "yarn",
+      "args": "console:dev bot:remove-bot-orders-using-user-trade-table 200 1000",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-save-user-gain-loss",
+      "script": "yarn",
+      "args": "console:dev user-statistic:save-user-gain-loss",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-save-user-deposit",
+      "script": "yarn",
+      "args": "console:dev user-statistic:save-user-deposit",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-save-user-withdrawal",
+      "script": "yarn",
+      "args": "console:dev user-statistic:save-user-withdrawal",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-update-user-peak-asset",
+      "script": "yarn",
+      "args": "console:dev user-statistic:update-user-peak-asset",
+      "instances": 6,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-update-user-total-trade-volume",
+      "script": "yarn",
+      "args": "console:dev user-statistic:update-user-total-trade-volume",
+      "instances": 2,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },  
+    {
+      "name": "solana-sota-dex-matching-engine-notifier",
+      "script": "yarn",
+      "args": "console:dev matching-engine:notify",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-orderbook",
+      "script": "yarn",
+      "args": "console:dev orderbook:publish",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-ticker-publisher",
+      "script": "yarn",
+      "args": "console:dev ticker:publish",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-orders-to-db",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-orders-to-db",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-user-position-to-cache",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-user-position-to-cache",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "future-event-upsert-trading-volume-session",
+      "script": "yarn",
+      "args": "console:dev future-event:upsert-trading-volume-session",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "future-event-cron-job-update-trading-volume",
+      "script": "yarn",
+      "args": "console:dev future-event:cron-job-update-trading-volume",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "firebase-noti-send-msg-to-user",
+      "script": "yarn",
+      "args": "console:dev firebase-noti:send-msg-to-user",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "firebase-noti-send-price-change-noti",
+      "script": "yarn",
+      "args": "console:dev firebase-noti:send-price-change-noti",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "save-user-market-order-from-client",
+      "script": "yarn",
+      "args": "console:dev order:save-user-market-order-from-client",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "future-event-update-user-used-reward-balance-detail",
+      "script": "yarn",
+      "args": "console:dev future-event:update-user-used-reward-balance-detail",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "bot-remove-bot-trades",
+      "script": "yarn",
+      "args": "console:dev bot:remove-bot-trades 2000 250",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    }
+  ]
+}

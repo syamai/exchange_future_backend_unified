@@ -1,0 +1,89 @@
+{{- range .Values.workers }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  labels:
+    app: {{ .name }}
+spec:
+  strategy:
+    type: Recreate
+  replicas: {{ $.Values.worker_replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+    {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        app: {{ .name }}
+        version: {{ $.Values.image.tag }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "{{ .name }}"
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: {{ .name }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: Always
+          command:
+          {{- with .command }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+          - name: VERSION
+            value: {{ $.Values.image.tag }}
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: APP_NAME
+            value: {{ .name }}
+          envFrom:
+          {{- if $.Values.configmap_external.enabled }}
+          - configMapRef:
+              name: {{ $.Values.name }}
+          {{- end }}
+          {{- if .configmap }}
+          - configMapRef:
+              name:
+              {{- with .configmap }}
+              {{- toYaml . | nindent 16 }}
+              {{- end }}
+          {{- end }}
+          {{- if $.Values.secret_external.enabled }}
+          - secretRef:
+              name: sota-dex
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 211000
+            runAsNonRoot: true
+            runAsUser: 211000
+      serviceAccountName: healthcheck
+      restartPolicy: Always
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+
+{{- end }}

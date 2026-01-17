@@ -1,0 +1,311 @@
+{
+  "apps": [
+    {
+      "name": "solana-sota-dex-be",
+      "script": "yarn",
+      "args": "run start",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-orderbook",
+      "script": "yarn",
+      "args": "console:dev orderbook:publish",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-orderbook-to-socket",
+      "script": "yarn",
+      "args": "console:dev orderbook:publish-to-socket",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-ticker-publisher",
+      "script": "yarn",
+      "args": "console:dev ticker:publish",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sota-dex-get-funding-rate",
+      "script": "yarn",
+      "args": "console:dev start-get-funding-rate",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-notifier",
+      "script": "yarn",
+      "args": "console:dev matching-engine:notify",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-accounts-to-db",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-accounts-to-db",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-orders-to-db",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-orders-to-db",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-positions",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-positions",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-trades",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-trades",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-candle-sync-trades",
+      "script": "yarn",
+      "args": "console:dev candles:sync-trades",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-candle-sync-candles",
+      "script": "yarn",
+      "args": "console:dev candles:sync-candles",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-save-order-from-client-v2",
+      "script": "yarn",
+      "args": "console:dev order:save-from-client-v2",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sota-dex-index",
+      "script": "yarn",
+      "args": "console:dev start-get-index-price",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-prepare-order-to-send-mail-and-notify",
+      "script": "yarn",
+      "args": "console:dev order:prepare-order-to-send-mail-and-notify",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-balance-history",
+      "script": "yarn",
+      "args": "console:dev account:daily-balance",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "save-balance-from-spot",
+      "script": "yarn",
+      "args": "console:dev future:referral_reward",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "deposit-to-future",
+      "script": "yarn",
+      "args": "console:dev future:transfer",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-anti-phishing-code-from-spot",
+      "script": "yarn",
+      "args": "console:dev future:sync-anti-phishing-code",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-device-token",
+      "script": "yarn",
+      "args": "console:dev future:sync-device-token",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-locale-user",
+      "script": "yarn",
+      "args": "console:dev future:sync-locale-user",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sync-user-from-spot",
+      "script": "yarn",
+      "args": "console:dev future:sync-user",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-funding",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-funding",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-margin-histories",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-margin-histories",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-position-histories",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-position-histories",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-transactions",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-transactions",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sota-dex-matching-engine-save-margin-leverage",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-margin-leverage",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "cron-job-remove-market-data",
+      "script": "yarn",
+      "args": "console:dev cron-job:remove-market-data",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "cron-job-remove-market-indices",
+      "script": "yarn",
+      "args": "console:dev cron-job:remove-market-indices",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "remove-only-bot-orders",
+      "script": "yarn",
+      "args": "console:dev bot:remove-bot-orders 200 2500",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "remove-only-bot-orders-using-user-trade-table",
+      "script": "yarn",
+      "args": "console:dev bot:remove-bot-orders-using-user-trade-table 100 500",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-save-user-gain-loss",
+      "script": "yarn",
+      "args": "console:dev user-statistic:save-user-gain-loss",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-save-user-deposit",
+      "script": "yarn",
+      "args": "console:dev user-statistic:save-user-deposit",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-save-user-withdrawal",
+      "script": "yarn",
+      "args": "console:dev user-statistic:save-user-withdrawal",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-update-user-peak-asset",
+      "script": "yarn",
+      "args": "console:dev user-statistic:update-user-peak-asset",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "user-statistic-update-user-total-trade-volume",
+      "script": "yarn",
+      "args": "console:dev user-statistic:update-user-total-trade-volume",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "account-save-future-event-reward",
+      "script": "yarn",
+      "args": "console:dev account:save-future-event-reward",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "future-event-update-user-used-reward-balance",
+      "script": "yarn",
+      "args": "console:dev future-event:update-user-used-reward-balance",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    }, 
+    {
+      "name": "solana-sota-dex-matching-engine-save-accounts-to-cache",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-accounts-to-cache",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-orders-to-cache",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-orders-to-cache",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "future-event-update-revoking-user-reward-balance",
+      "script": "yarn",
+      "args": "console:dev future-event:update-revoking-user-reward-balance",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "future-event-bull-queue-revoke-reward-balance-process",
+      "script": "yarn",
+      "args": "console:dev future-event:bull-queue-revoke-reward-balance-process",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "env": {
+        "IS_REVOKE_BALANCE_WORKER": "true"
+      }
+    },
+    {
+      "name": "future-event-revoke-reward-when-user-close-position-order",
+      "script": "yarn",
+      "args": "console:dev future-event:revoke-reward-when-user-close-position-order",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-position-history-by-session-from-margin-history",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-position-history-by-session-from-margin-history",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-save-user-position-to-cache",
+      "script": "yarn",
+      "args": "console:dev matching-engine:save-user-position-to-cache",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "solana-sota-dex-matching-engine-check-to-seed-liq-order-ids",
+      "script": "yarn",
+      "args": "console:dev matching-engine:check-to-seed-liquidation-order-ids",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    }
+  ]
+}

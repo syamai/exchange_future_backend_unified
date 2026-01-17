@@ -1,0 +1,226 @@
+version: '3.8'
+
+x-matching-engine-common: &matching-engine-common
+  build:
+    context: .
+    dockerfile: Dockerfile.shard
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "50m"
+      max-file: "10"
+  networks:
+    - exchange-network
+
+services:
+  # ===========================================
+  # Shard 1: BTC Pairs (Highest Volume)
+  # ===========================================
+  matching-engine-shard-1-primary:
+    <<: *matching-engine-common
+    container_name: me-shard-1-primary
+    environment:
+      - SHARD_ID=shard-1
+      - SHARD_ROLE=primary
+      - ASSIGNED_SYMBOLS=BTCUSDT,BTCBUSD,BTCUSDC
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms8g -Xmx8g -XX:+UseZGC -XX:+ZGenerational
+    ports:
+      - "8081:8080"   # Health
+      - "9091:9090"   # Metrics
+    volumes:
+      - shard1-primary-logs:/app/logs
+      - shard1-primary-heapdumps:/app/heapdumps
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 10G
+        reservations:
+          cpus: '2'
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  matching-engine-shard-1-standby:
+    <<: *matching-engine-common
+    container_name: me-shard-1-standby
+    environment:
+      - SHARD_ID=shard-1
+      - SHARD_ROLE=standby
+      - ASSIGNED_SYMBOLS=BTCUSDT,BTCBUSD,BTCUSDC
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms8g -Xmx8g -XX:+UseZGC -XX:+ZGenerational
+    ports:
+      - "8082:8080"
+      - "9092:9090"
+    volumes:
+      - shard1-standby-logs:/app/logs
+      - shard1-standby-heapdumps:/app/heapdumps
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 10G
+        reservations:
+          cpus: '2'
+          memory: 8G
+    depends_on:
+      matching-engine-shard-1-primary:
+        condition: service_healthy
+
+  # ===========================================
+  # Shard 2: ETH Pairs
+  # ===========================================
+  matching-engine-shard-2-primary:
+    <<: *matching-engine-common
+    container_name: me-shard-2-primary
+    environment:
+      - SHARD_ID=shard-2
+      - SHARD_ROLE=primary
+      - ASSIGNED_SYMBOLS=ETHUSDT,ETHBUSD,ETHUSDC
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms6g -Xmx6g -XX:+UseZGC -XX:+ZGenerational
+    ports:
+      - "8083:8080"
+      - "9093:9090"
+    volumes:
+      - shard2-primary-logs:/app/logs
+      - shard2-primary-heapdumps:/app/heapdumps
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 6G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  matching-engine-shard-2-standby:
+    <<: *matching-engine-common
+    container_name: me-shard-2-standby
+    environment:
+      - SHARD_ID=shard-2
+      - SHARD_ROLE=standby
+      - ASSIGNED_SYMBOLS=ETHUSDT,ETHBUSD,ETHUSDC
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms6g -Xmx6g -XX:+UseZGC -XX:+ZGenerational
+    ports:
+      - "8084:8080"
+      - "9094:9090"
+    volumes:
+      - shard2-standby-logs:/app/logs
+      - shard2-standby-heapdumps:/app/heapdumps
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 6G
+    depends_on:
+      matching-engine-shard-2-primary:
+        condition: service_healthy
+
+  # ===========================================
+  # Shard 3: Other Pairs (Default Shard)
+  # ===========================================
+  matching-engine-shard-3-primary:
+    <<: *matching-engine-common
+    container_name: me-shard-3-primary
+    environment:
+      - SHARD_ID=shard-3
+      - SHARD_ROLE=primary
+      - ASSIGNED_SYMBOLS=SOLUSDT,XRPUSDT,ADAUSDT,DOTUSDT,MATICUSDT,LINKUSDT,AVAXUSDT,ATOMUSDT
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms4g -Xmx4g -XX:+UseZGC -XX:+ZGenerational
+    ports:
+      - "8085:8080"
+      - "9095:9090"
+    volumes:
+      - shard3-primary-logs:/app/logs
+      - shard3-primary-heapdumps:/app/heapdumps
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 6G
+        reservations:
+          cpus: '1'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  matching-engine-shard-3-standby:
+    <<: *matching-engine-common
+    container_name: me-shard-3-standby
+    environment:
+      - SHARD_ID=shard-3
+      - SHARD_ROLE=standby
+      - ASSIGNED_SYMBOLS=SOLUSDT,XRPUSDT,ADAUSDT,DOTUSDT,MATICUSDT,LINKUSDT,AVAXUSDT,ATOMUSDT
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms4g -Xmx4g -XX:+UseZGC -XX:+ZGenerational
+    ports:
+      - "8086:8080"
+      - "9096:9090"
+    volumes:
+      - shard3-standby-logs:/app/logs
+      - shard3-standby-heapdumps:/app/heapdumps
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 6G
+        reservations:
+          cpus: '1'
+          memory: 4G
+    depends_on:
+      matching-engine-shard-3-primary:
+        condition: service_healthy
+
+networks:
+  exchange-network:
+    external: true
+    name: ${NETWORK_NAME:-exchange-network}
+
+volumes:
+  shard1-primary-logs:
+  shard1-primary-heapdumps:
+  shard1-standby-logs:
+  shard1-standby-heapdumps:
+  shard2-primary-logs:
+  shard2-primary-heapdumps:
+  shard2-standby-logs:
+  shard2-standby-heapdumps:
+  shard3-primary-logs:
+  shard3-primary-heapdumps:
+  shard3-standby-logs:
+  shard3-standby-heapdumps:

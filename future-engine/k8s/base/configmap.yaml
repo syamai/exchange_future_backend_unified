@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matching-engine-config
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+data:
+  # JVM settings
+  JAVA_OPTS: >-
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=/app/heapdumps
+    -Djava.net.preferIPv4Stack=true
+    -Dfile.encoding=UTF-8
+
+  # Health check ports
+  HEALTH_PORT: "8080"
+  METRICS_PORT: "9090"
+
+  # Shard mapping configuration
+  shard-mapping.yaml: |
+    shards:
+      shard-1:
+        symbols:
+          - BTCUSDT
+          - BTCBUSD
+          - BTCUSDC
+        kafka:
+          inputTopic: matching-engine-shard-1-input
+          outputTopic: matching-engine-shard-1-output
+          syncTopic: shard-sync-shard-1
+      shard-2:
+        symbols:
+          - ETHUSDT
+          - ETHBUSD
+          - ETHUSDC
+        kafka:
+          inputTopic: matching-engine-shard-2-input
+          outputTopic: matching-engine-shard-2-output
+          syncTopic: shard-sync-shard-2
+      shard-3:
+        symbols:
+          - SOLUSDT
+          - XRPUSDT
+          - ADAUSDT
+          - DOTUSDT
+          - MATICUSDT
+          - LINKUSDT
+          - AVAXUSDT
+          - ATOMUSDT
+        kafka:
+          inputTopic: matching-engine-shard-3-input
+          outputTopic: matching-engine-shard-3-output
+          syncTopic: shard-sync-shard-3
+    defaultShard: shard-3

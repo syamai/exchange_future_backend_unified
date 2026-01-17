@@ -1,0 +1,46 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.name }}-backend
+  labels:
+    app: {{ .Values.name }}-backend
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/cors-allow-methods: GET, PUT, POST, DELETE, PATCH, OPTIONS
+    nginx.ingress.kubernetes.io/cors-allow-origin: {{ .Values.allowOrigin }}
+    nginx.ingress.kubernetes.io/cors-allow-headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,sotadex-signature,sotadex-address,sotadex-message,sotadex-timestamp
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: max-age=31536000 ; includeSubDomains";
+      more_set_headers "X-Frame-Options: deny";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Cache-Control: no-cache";
+      more_set_headers "Cache-Control: no-store";
+      more_clear_headers Server;
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: {{ .Values.ingress.class }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .serviceName }}
+                port:
+                  number: 3000
+          {{- end }}
+    {{- end }}
+  tls:
+    - hosts:
+      {{- range .Values.ingress.hosts }}
+      - {{ .host | quote }}
+      {{- end }}
+      secretName: letsencrypt-sota-dex-stg
+{{- end }}

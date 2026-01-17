@@ -1,0 +1,108 @@
+---
+# Headless Service for Shard 1 StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-shard-1
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-1
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-1
+  ports:
+    - name: health
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+
+---
+# Headless Service for Shard 2 StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-shard-2
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-2
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-2
+  ports:
+    - name: health
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+
+---
+# Headless Service for Shard 3 StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-shard-3
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-3
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-3
+  ports:
+    - name: health
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+
+---
+# ClusterIP Service for all matching engines (for internal routing)
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: matching-engine
+  ports:
+    - name: health
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+
+---
+# Service for Prometheus metrics scraping
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-metrics
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: metrics
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: matching-engine
+  ports:
+    - name: metrics
+      port: 9090
+      targetPort: 9090

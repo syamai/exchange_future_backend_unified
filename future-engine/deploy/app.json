@@ -1,0 +1,14 @@
+{
+  "apps": [
+    {
+      "name": "sota-dex-matching-engine",
+      "script": "/home/ubuntu/engine/deploy/start-matching-engine.sh",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sota-dex-ticker-engine",
+      "script": "/home/ubuntu/engine/deploy/start-ticker-engine.sh",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    }
+  ]
+}

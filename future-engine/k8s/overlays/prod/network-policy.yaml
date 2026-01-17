@@ -1,0 +1,68 @@
+---
+# NetworkPolicy for matching engine pods
+# Restricts traffic to only necessary connections
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: matching-engine-network-policy
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: matching-engine
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Allow health checks and metrics from monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080  # Health
+        - protocol: TCP
+          port: 9090  # Metrics
+
+    # Allow intra-shard communication (Primary <-> Standby)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: matching-engine
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+
+    # Allow Kafka (MSK)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust to your VPC CIDR
+      ports:
+        - protocol: TCP
+          port: 9092
+        - protocol: TCP
+          port: 9094  # TLS
+
+    # Allow intra-shard communication
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: matching-engine
+      ports:
+        - protocol: TCP
+          port: 8080

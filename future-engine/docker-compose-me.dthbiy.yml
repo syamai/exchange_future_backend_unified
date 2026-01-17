@@ -1,0 +1,14 @@
+version: '3'
+services:
+  engine:
+#    platform: linux/x86_64
+    build:
+      context: .
+      dockerfile: ./DockerfileMe.dthbiy
+    container_name: matching-engine
+    network_mode: "host"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

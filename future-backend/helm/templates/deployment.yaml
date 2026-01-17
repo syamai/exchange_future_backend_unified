@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-backend
+  labels:
+    app: {{ .Values.name }}-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}-backend
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        app: {{ .Values.name }}-backend
+        version: {{ .Values.image.tag }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "{{ .Values.name }}-backend"
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: {{ .Values.name }}-backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: Always
+          command: ["node", "dist/main.js"]
+          env:
+          - name: VERSION
+            value: {{ .Values.image.tag }}
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: APP_NAME
+            value: {{ .Values.name }}-backend
+          envFrom:
+          {{- if .Values.configmap_external.enabled }}
+          - configMapRef:
+              name: {{ .Values.name }}
+          {{- end }}
+          {{- if .Values.secret_external.enabled }}
+          - secretRef:
+              name: sota-dex
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 2
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              port: 3000
+              path: /api/v1/ping
+              scheme: HTTP
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              port: 3000
+              path: /api/v1/ping
+              scheme: HTTP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 211000
+            runAsNonRoot: true
+            runAsUser: 211000
+      restartPolicy: Always
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

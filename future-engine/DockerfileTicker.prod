@@ -1,0 +1,12 @@
+# Use an official OpenJDK 17 image as a base
+FROM eclipse-temurin:17-jdk
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the project JAR file into the container at /app
+COPY target/classes /app/target/classes
+COPY target/MatchingEngine-1.0-shaded.jar /app/target/MatchingEngine-1.0-shaded.jar
+
+# Command to run your Java application
+CMD ["java", "-Xms12g", "-Xmx12g", "-XX:+UseZGC", "-Xlog:gc*:file=gc.log:time,uptime,level,tags", "-XX:ParallelGCThreads=4", "-XX:ConcGCThreads=8", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/app/heapdumps", "-cp", "/app/target/MatchingEngine-1.0-shaded.jar", "com.sotatek.future.TickerEngineCLI", "ip-172-31-14-54.ap-southeast-1.compute.internal:9092"]

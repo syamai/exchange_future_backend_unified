@@ -1,0 +1,107 @@
+version: "3"
+services:
+  # Database
+  mariadb:
+    image: mariadb:10.11.10
+    container_name: mariadb-minimal
+    environment:
+      MARIADB_ROOT_PASSWORD: 1
+      MARIADB_DATABASE: prd-sotadex
+    ports:
+      - "3306:3306"
+    volumes:
+      - /home/ubuntu/.dockerVolumeData/mariadb_data:/var/lib/mysql
+    command: >
+      --max_allowed_packet=1073741824
+      --max_connections=10000
+
+  # Redis
+  redis:
+    image: "redis:6-alpine"
+    container_name: redis-minimal
+    ports:
+      - 6380:6379
+    volumes:
+      - /home/ubuntu/.dockerVolumeData/redis_data:/data
+
+  # Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    hostname: zookeeper
+    container_name: zookeeper-minimal
+    ports:
+      - "2181:2181"
+    volumes:
+      - /home/ubuntu/.dockerVolumeData/zookeeper-data:/var/lib/zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    logging:
+      driver: json-file
+      options:
+        max-size: "10g"
+        max-file: "5"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka-minimal
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "9999:9999"
+    volumes:
+      - /home/ubuntu/.dockerVolumeData/kafka-data:/var/lib/kafka/data
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST}:9092,DOCKER://host.docker.internal:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: ${KAFKA_EXTERNAL_HOST}
+      JMX_PORT: 9999
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_MESSAGE_MAX_BYTES: 900000000
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 900000000
+      KAFKA_LOG_SEGMENT_MS: 43200000
+      KAFKA_LOG_RETENTION_HOURS: 72
+    depends_on:
+      - zookeeper
+    logging:
+      driver: json-file
+      options:
+        max-size: "10g"
+        max-file: "5"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  kafka-ui:
+    container_name: kafka-ui-minimal
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9999
+      DYNAMIC_CONFIG_ENABLED: "true"
+      AUTH_TYPE: "LOGIN_FORM"
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: Thisispassword123@
+    logging:
+      driver: json-file
+      options:
+        max-size: "10g"
+        max-file: "5"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

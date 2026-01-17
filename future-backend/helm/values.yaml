@@ -1,0 +1,134 @@
+# Default values for helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+name: sota-dex
+
+workers:
+  - name: sota-dex-console
+    command: [ "tail", "-f", "/dev/null" ]
+  - name: sota-dex-matching-engine-notifier
+    command: [ "node", "dist/console.js", "matching-engine:notify" ]
+  - name: sota-dex-matching-engine-save-accounts
+    command: [ "node", "dist/console.js", "matching-engine:save-accounts" ]
+  - name: sota-dex-matching-engine-save-positions
+    command: [ "node", "dist/console.js", "matching-engine:save-positions" ]
+  - name: sota-dex-matching-engine-save-orders
+    command: [ "node", "dist/console.js", "matching-engine:save-orders" ]
+  - name: sota-dex-matching-engine-save-trades
+    command: [ "node", "dist/console.js", "matching-engine:save-trades" ]
+  - name: sota-dex-matching-engine-save-transactions
+    command: [ "node", "dist/console.js", "matching-engine:save-transactions" ]
+  - name: sota-dex-matching-engine-save-position-histories
+    command: [ "node", "dist/console.js", "matching-engine:save-position-histories" ]
+  - name: sota-dex-matching-engine-save-funding
+    command: [ "node", "dist/console.js", "matching-engine:save-funding" ]
+  - name: sota-dex-matching-engine-save-margin-histories
+    command: [ "node", "dist/console.js", "matching-engine:save-margin-histories" ]
+  - name: sota-dex-orderbook
+    command: [ "node", "dist/console.js", "orderbook:publish" ]
+  - name: sota-dex-ticker-publisher
+    command: [ "node", "dist/console.js", "ticker:publish" ]
+  - name: sota-dex-index
+    command: [ "node", "dist/console.js", "start-get-index-price" ]
+  - name: sota-dex-candle-sync-trades
+    command: [ "node", "dist/console.js", "candles:sync-trades" ]
+  - name: sota-dex-candle-sync-candles
+    command: [ "node", "dist/console.js", "candles:sync-candles" ]
+  - name: sota-dex-healthcheck
+    command: [ "node", "dist/console.js", "health:check" ]
+  - name: sota-dex-get-funding-rate
+    command: [ "node", "dist/console.js", "start-get-funding-rate" ]
+  - name: sota-dex-email
+    command: [ "node", "dist/main.js" ]
+    configmap: 'sota-dex-email'
+  - name: sota-dex-action
+    command: [ "node", "dist/console.js", "dex:action" ]
+  - name: sota-dex-action-picker
+    command: [ "node", "dist/console.js", "dex:action-picker" ]
+  - name: sota-dex-action-sender
+    command: [ "node", "dist/console.js", "dex:action-sender" ]
+  - name: sota-dex-action-verifier
+    command: [ "node", "dist/console.js", "dex:action-verifier" ]
+  - name: sota-dex-action-history
+    command: [ "node", "dist/console.js", "dex:action-history" ]
+  - name: sota-dex-action-balance-checker
+    command: [ "node", "dist/console.js", "dex:action-balance-checker" ]
+
+  - name: sota-dex-order-create-inverted-index
+    command: [ "node", "dist/console.js", "order:create-inverted-index" ]
+
+cronjobs:
+  - name: sota-dex-pay-funding
+    command: [ "node", "dist/console.js", "funding:pay" ]
+    schedule: "0 * * * *"
+  - name: sota-dex-balance-history
+    command: [ "node", "dist/console.js", "account:daily-balance" ]
+    schedule: "0 0 * * *"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: { }
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 50
+  targetMemoryUtilizationPercentage: 50
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
+
+configmap_external:
+  enabled: true
+secret_external:
+  enabled: true
+
+

@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "name": "save-user-market-order-from-client",
+      "script": "yarn",
+      "args": "console:dev order:save-user-market-order-from-client",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "interpreter": "/bin/sh"
+    },
+    {
+      "name": "solana-sota-dex-save-order-from-client-v2",
+      "script": "yarn",
+      "args": "console:dev order:save-from-client-v2",
+      "instances": 1,
+      "exec_mode": "fork",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "interpreter": "/bin/sh"
+    }
+  ]
+}

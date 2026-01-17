@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      width: 668px;
+      height: 536px;
+      margin: 0;
+      line-height: 28px;
+      font-family: 'Roboto';
+      font-size: 18px;
+      line-height: 27px;
+    }
+
+  
+    .email-content {
+      padding: 48px 56px;
+      background-color: #FFFFFF;
+    }
+
+    .sotadex-img {
+      width: 100%;
+      max-height: 200px;
+    }
+
+    p {
+      color: #555770;
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: normal;
+      font-size: 14px;
+      line-height: 150%;
+      padding: 0px;
+      margin: 0px;
+    }
+    footer {
+      margin-top: 16px;
+      color: #555770;
+    }
+  </style>
+</head>
+
+<body>
+    <header><img class="sotadex-img" src="{{ bannerLink }}" /></header>
+    <div class="email-content">
+      <p>Dear <span class="email">{{email}}</span>,</p>
+
+      <br/>
+      <p>Unfortunately, at your wallet address, your {{side}} position with size of {{size}} on {{market}} on Sotadex trading platform are liquidated.</p>
+      <br/>
+      <p>Your positions are forcefully closed and you lose all your maintenance margin for the position. To avoid such liquidations in the future, you should consider:</p>
+      <p>- Placing a Stop Loss order whose Stop price is lower than liquidation price for Short position and higher than liquidation price for Long position.</p>  
+      <p>- Paying attention to the Margin ratio figure on the left side of the Trading screen. The higher this number is, the more likely your positions are liquidated.</p>  
+      <p>- Trading in Market with lower leverage.</p>  
+      </p>
+     
+      <footer>
+          <p>Good luck with your future trades!</p>
+      </footer>
+    </div>   
+     {{#if antiPhishingCode}}
+                  <div style="display: flex; padding-top: 20px">
+                    <div style="background-color: #00DDB3;padding: 2px 10px;border-bottom-left-radius: 5px;border-top-left-radius: 5px"><b>Anti-Phishing</b></div>
+                    <div style="background-color: #dedede;padding: 2px 10px;border-top-right-radius: 5px;border-bottom-right-radius: 5px"><b>{{ antiPhishingCode }}</b></div>
+                </div>
+    {{/if}}
+</body>
+
+</html>

@@ -1,0 +1,49 @@
+version: '3.8'
+
+# Development configuration for local testing
+# Usage: docker-compose -f docker-compose-sharded.dev.yml up -d
+
+services:
+  # Single shard for development
+  matching-engine-shard-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.shard
+    container_name: me-shard-dev
+    environment:
+      - SHARD_ID=shard-dev
+      - SHARD_ROLE=primary
+      - ASSIGNED_SYMBOLS=BTCUSDT,ETHUSDT,SOLUSDT
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}
+      - HEALTH_PORT=8080
+      - METRICS_PORT=9090
+      - JAVA_OPTS=-Xms2g -Xmx2g -XX:+UseZGC
+    ports:
+      - "8080:8080"   # Health
+      - "9090:9090"   # Metrics
+    volumes:
+      - ./logs:/app/logs
+      - ./heapdumps:/app/heapdumps
+    network_mode: host
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-dev
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    network_mode: host
+    profiles:
+      - monitoring

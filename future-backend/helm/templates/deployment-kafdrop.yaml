@@ -1,0 +1,66 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-kafdrop
+  labels:
+    app: {{ .Values.name }}-kafdrop
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}-kafdrop
+  template:
+    metadata:
+    {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        app: {{ .Values.name }}-kafdrop
+        version: {{ .Values.image.tag }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Values.name }}-kafdrop
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: {{ .Values.name }}-kafdrop
+          image: "obsidiandynamics/kafdrop"
+          imagePullPolicy: Always
+          env:
+          - name: VERSION
+            value: {{ .Values.image.tag }}
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: APP_NAME
+            value: {{ .Values.name }}-kafdrop
+          - name: KAFKA_BROKERCONNECT
+            value: {{ .Values.env.KAFKA_BROKERS }}
+          - name: JVM_OPTS
+            value: "-Xms160M -Xmx480M -Xss1800K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonRoot: false
+      restartPolicy: Always
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+

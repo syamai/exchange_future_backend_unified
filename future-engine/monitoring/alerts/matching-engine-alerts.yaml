@@ -1,0 +1,168 @@
+groups:
+  - name: matching-engine.critical
+    rules:
+      # Shard completely down
+      - alert: MatchingEngineShardDown
+        expr: sum by (shard) (up{job="matching-engine"}) == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: exchange
+        annotations:
+          summary: "Matching engine shard {{ $labels.shard }} is down"
+          description: "All pods for shard {{ $labels.shard }} are unavailable for more than 1 minute. Immediate action required."
+          runbook_url: "https://wiki.internal/runbooks/matching-engine-shard-down"
+
+      # Primary down, only standby running
+      - alert: MatchingEnginePrimaryDown
+        expr: |
+          sum by (shard) (up{job="matching-engine", pod=~".*-0"}) == 0
+          and sum by (shard) (up{job="matching-engine", pod=~".*-1"}) > 0
+        for: 30s
+        labels:
+          severity: critical
+          team: exchange
+        annotations:
+          summary: "Primary for shard {{ $labels.shard }} is down"
+          description: "Primary pod for shard {{ $labels.shard }} is down. Standby should failover automatically."
+
+      # No orders processed for extended period
+      - alert: MatchingEngineNoOrdersProcessed
+        expr: |
+          sum by (shard) (rate(matching_engine_orders_processed_total[5m])) == 0
+          and sum by (shard) (up{job="matching-engine"}) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: exchange
+        annotations:
+          summary: "No orders processed on shard {{ $labels.shard }}"
+          description: "Shard {{ $labels.shard }} has not processed any orders in 5 minutes despite being up."
+
+  - name: matching-engine.warning
+    rules:
+      # High memory usage
+      - alert: MatchingEngineHighMemory
+        expr: |
+          (jvm_memory_used_bytes{area="heap", job="matching-engine"}
+           / jvm_memory_max_bytes{area="heap", job="matching-engine"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: exchange
+        annotations:
+          summary: "High heap memory usage on {{ $labels.pod }}"
+          description: "JVM heap usage is {{ $value | humanizePercentage }} on pod {{ $labels.pod }}."
+
+      # Critical memory usage
+      - alert: MatchingEngineCriticalMemory
+        expr: |
+          (jvm_memory_used_bytes{area="heap", job="matching-engine"}
+           / jvm_memory_max_bytes{area="heap", job="matching-engine"}) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          team: exchange
+        annotations:
+          summary: "Critical heap memory usage on {{ $labels.pod }}"
+          description: "JVM heap usage is {{ $value | humanizePercentage }} on pod {{ $labels.pod }}. OOM risk!"
+
+      # High order latency
+      - alert: MatchingEngineHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, shard) (rate(matching_engine_order_latency_seconds_bucket[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: exchange
+        annotations:
+          summary: "High P99 latency on shard {{ $labels.shard }}"
+          description: "P99 order processing latency is {{ $value | humanizeDuration }} on shard {{ $labels.shard }}."
+
+      # Very high latency
+      - alert: MatchingEngineCriticalLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, shard) (rate(matching_engine_order_latency_seconds_bucket[5m]))
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+          team: exchange
+        annotations:
+          summary: "Critical P99 latency on shard {{ $labels.shard }}"
+          description: "P99 order processing latency is {{ $value | humanizeDuration }} on shard {{ $labels.shard }}. Investigate immediately!"
+
+      # High GC pause time
+      - alert: MatchingEngineHighGCPause
+        expr: |
+          rate(jvm_gc_pause_seconds_sum{job="matching-engine"}[5m])
+          / rate(jvm_gc_pause_seconds_count{job="matching-engine"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: exchange
+        annotations:
+          summary: "High GC pause time on {{ $labels.pod }}"
+          description: "Average GC pause time is {{ $value | humanizeDuration }} on pod {{ $labels.pod }}."
+
+      # Pod restarts
+      - alert: MatchingEnginePodRestarting
+        expr: |
+          increase(kube_pod_container_status_restarts_total{
+            namespace="matching-engine",
+            container="matching-engine"
+          }[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: exchange
+        annotations:
+          summary: "Pod {{ $labels.pod }} is restarting frequently"
+          description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last hour."
+
+      # Orderbook imbalance
+      - alert: MatchingEngineOrderbookImbalance
+        expr: |
+          abs(
+            matching_engine_orderbook_depth{side="buy"}
+            - matching_engine_orderbook_depth{side="sell"}
+          ) / (
+            matching_engine_orderbook_depth{side="buy"}
+            + matching_engine_orderbook_depth{side="sell"} + 1
+          ) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          team: exchange
+        annotations:
+          summary: "Orderbook imbalance for {{ $labels.symbol }}"
+          description: "Significant orderbook imbalance detected for {{ $labels.symbol }} on shard {{ $labels.shard }}."
+
+  - name: matching-engine.info
+    rules:
+      # Shard rebalancing in progress
+      - alert: MatchingEngineRebalancing
+        expr: matching_engine_rebalancing_in_progress == 1
+        for: 1m
+        labels:
+          severity: info
+          team: exchange
+        annotations:
+          summary: "Rebalancing in progress"
+          description: "Symbol rebalancing is in progress. Some symbols may be temporarily unavailable."
+
+      # High order rejection rate
+      - alert: MatchingEngineHighRejectionRate
+        expr: |
+          sum by (shard) (rate(matching_engine_order_rejections_total[5m]))
+          / sum by (shard) (rate(matching_engine_orders_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: info
+          team: exchange
+        annotations:
+          summary: "High order rejection rate on shard {{ $labels.shard }}"
+          description: "Order rejection rate is {{ $value | humanizePercentage }} on shard {{ $labels.shard }}."

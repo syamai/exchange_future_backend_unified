@@ -1,0 +1,31 @@
+<FindBugsFilter>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <!--  Ignore MS_EXPOSE_REP for singleton -->
+  <Match>
+    <Method name="getInstance" />
+    <Or>
+      <Class name="com.sotatek.future.service.PositionHistoryService"/>
+      <Class name="com.sotatek.future.service.TradeService"/>
+      <Class name="com.sotatek.future.service.TransactionService"/>
+      <Class name="com.sotatek.future.service.OrderService"/>
+      <Class name="com.sotatek.future.service.InstrumentService"/>
+      <Class name="com.sotatek.future.service.FundingService"/>
+      <Class name="com.sotatek.future.service.InsuranceService"/>
+      <Class name="com.sotatek.future.service.MarginHistoryService"/>
+      <Class name="com.sotatek.future.service.AccountService"/>
+      <Class name="com.sotatek.future.service.PositionService"/>
+    </Or>
+    <Bug pattern="MS_EXPOSE_REP"/>
+  </Match>
+  <!-- Ignore EQ_COMPARETO_USE_OBJECT_EQUALS for DelayedQueue elements -->
+  <Match>
+    <Class name="com.sotatek.util.SelfExpiringConcurrentMap$DelayedOrder"/>
+    <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS"/>
+  </Match>
+</FindBugsFilter>
+

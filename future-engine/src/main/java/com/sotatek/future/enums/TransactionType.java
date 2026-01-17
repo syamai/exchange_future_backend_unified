@@ -1,0 +1,16 @@
+package com.sotatek.future.enums;
+
+public enum TransactionType {
+  DEPOSIT,
+  WITHDRAWAL,
+  FUNDING_FEE,
+  TRADING_FEE,
+  REALIZED_PNL,
+  LIQUIDATION_CLEARANCE, // liquidation fee
+  NEGATIVE_ACCOUNT_CLEARANCE,
+  REWARD,
+  REFERRAL,
+  MARGIN_INSURANCE_FEE,
+  EVENT_REWARD,
+  REVOKE_EVENT_REWARD
+}

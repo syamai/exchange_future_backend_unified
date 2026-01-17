@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      width: 668px;
+      height: 536px;
+      margin: 0;
+      line-height: 28px;
+      font-family: 'Roboto';
+      font-size: 18px;
+      line-height: 27px;
+      background-color: white;
+    }
+
+
+    .email-content {
+      padding: 48px 56px;
+    }
+
+    .title {
+      font-weight: bold;
+      font-size: 30px;
+      line-height: 45px;
+      color: #555770;
+      margin-bottom: 24px;
+      margin-top: 0px;
+    }
+
+    .sotadex-img {
+      width: 100%;
+      max-height: 200px;
+    }
+
+    p {
+      color: #555770;
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: normal;
+      font-size: 14px;
+      line-height: 150%;
+      padding: 0px;
+      margin: 0px;
+    }
+
+    .btn-verify {
+      padding: 7px 24px 8px 24px;
+      color: #FFFFFF;
+      background-color: #3E7BFA;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0px;
+    }
+  </style>
+</head>
+
+<body>
+  <header><img class="sotadex-img" src="{{ bannerLink }}" /></header>
+  <div class="email-content">
+    <h3 class="title">Confirm Changing Your Email</h3>
+    <p>You are about to change your email to receive notifications from Lagom for wallet</p>
+    <br />
+    <p>Click the button below to change the registered email from {{oldEmail}} to</p>
+    <p>{{email}}</p>
+    <a href={{ confirmLink }}>
+      <button class="btn-verify" type="submit">
+        Verify Email
+      </button>
+    </a>
+    <p>
+      If you can't confirm by clicking the button above, please copy the address below to the browser address bar to
+      confirm.
+    </p>
+    <p>
+      {{ confirmLink }}
+    </p>
+  </div>
+     {{#if antiPhishingCode}}
+                  <div style="display: flex; padding-top: 20px">
+                    <div style="background-color: #00DDB3;padding: 2px 10px;border-bottom-left-radius: 5px;border-top-left-radius: 5px"><b>Anti-Phishing</b></div>
+                    <div style="background-color: #dedede;padding: 2px 10px;border-top-right-radius: 5px;border-bottom-right-radius: 5px"><b>{{ antiPhishingCode }}</b></div>
+                </div>
+    {{/if}}
+</body>
+
+</html>

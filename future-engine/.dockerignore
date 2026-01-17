@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+.vscode
+.project
+.classpath
+.settings
+
+# Build outputs (will be created in multi-stage build)
+target/
+!target/MatchingEngine-1.0-shaded.jar
+
+# Logs
+*.log
+logs/
+gc.log
+
+# Heap dumps
+heapdumps/
+*.hprof
+
+# Docker files (not needed in context for multi-stage)
+Dockerfile*
+docker-compose*.yml
+!Dockerfile.shard
+
+# Documentation
+docs/
+*.md
+README*
+
+# Test files
+src/test/
+
+# Local configuration
+*.local
+*.env
+.env*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Maven wrapper (not needed when using maven image)
+.mvn/
+mvnw
+mvnw.cmd

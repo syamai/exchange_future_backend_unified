@@ -1,0 +1,28 @@
+version: "3"
+services:
+  save-order-from-client-v2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: future-backend_save-order-from-client-v2
+    command: ["bash", "-c", "NODE_ENV=inside-docker-container pm2-runtime start pm2-process.main-minimal.for-docker.json --only save-order-from-client-v2"]
+    volumes:
+      - .:/app
+      - ./logs/save-order-from-client-v2:/root/.pm2/logs
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  save-user-market-order-from-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: future-backend_save-user-market-order-from-client
+    command: ["bash", "-c", "NODE_ENV=inside-docker-container pm2-runtime start pm2-process.main-minimal.for-docker.json --only save-user-market-order-from-client"]
+    volumes:
+      - .:/app
+      - ./logs/save-user-market-order-from-client:/root/.pm2/logs
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+

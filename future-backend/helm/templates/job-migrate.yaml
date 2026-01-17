@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migration
+  labels:
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ .Values.name }}-migration
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: {{ .Values.name }}-migration
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: Always
+        command: ["yarn", "typeorm:run"]
+        env:
+        - name: VERSION
+          value: {{ .Values.image.tag }}
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: APP_NAME
+          value: {{ .Values.name }}-migration
+        envFrom:
+        {{- if .Values.secret_external.enabled }}
+        - secretRef:
+            name: {{ .Values.name }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: true
+          runAsNonRoot: false

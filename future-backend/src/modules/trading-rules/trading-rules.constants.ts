@@ -1,0 +1,6 @@
+export const TRADING_RULES_CACHE = "TRADING_RULES_CACHE";
+export const TRADING_RULES_CACHE_NO_LIMIT = "TRADING_RULES_CACHE_NO_LIMIT";
+export const TRADING_RULES_TTL = 3600;
+export const MAX_PRICE = "MAX_PRICE";
+export const MIN_PRICE = "MIN_PRICE";
+export const PRICE_CACHE_TTL = 43200; // 12 hours

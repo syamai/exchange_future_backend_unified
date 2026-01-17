@@ -1,0 +1,9 @@
+export const INSTRUMENT_SYMBOL_CACHE = "INSTRUMENT_SYMBOL_CACHE";
+export const INSTRUMENT_CACHE = "INSTRUMENT_CACHE";
+export const INSTRUMENT_SYMBOL_COIN_M_CACHE = "INSTRUMENT_SYMBOL_COIN_M_CACHE";
+export const SYMBOL_CACHE = "SYMBOL_CACHE";
+
+export const COINM = "COIN_M";
+export const USDM = "USD_M";
+
+export const LAST_PRICE_TTL = 43200; // 12시간

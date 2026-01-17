@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}
+  namespace: default
+  labels:
+    name: {{ .Values.name }}
+data:
+  NODE_ENV: production
+  TZ: UTC
+  NO_COLOR: "true"
+
+  APP_NAME: sotadex-be
+  APP_PORT: "3000"
+  APP_PREFIX: api/v1
+
+  REDIS_HOST: {{ .Values.env.REDIS_HOST }}
+  REDIS_PORT: "6379"
+
+  KAFKA_BROKERS: {{ .Values.env.KAFKA_BROKERS }}
+
+  DEX_RPC_HOST: "{{ .Values.env.DEX_RPC_HOST }}"
+  DEX_CHAIN_ID: "{{ .Values.env.DEX_CHAIN_ID }}"
+  DEX_START_BLOCK: "{{ .Values.env.DEX_START_BLOCK }}"
+  DEX_ACTION_BATCH_SIZE: "{{ .Values.env.DEX_ACTION_BATCH_SIZE }}"
+  DEX_MAX_IN_PROGRESS_ACTION: "{{ .Values.env.DEX_MAX_IN_PROGRESS_ACTION }}"
+  BLOCK_TIME: "{{ .Values.env.BLOCK_TIME }}"
+
+  BLOCK_CONFIRM: "{{ .Values.env.BLOCK_CONFIRM }}"
+  COLLATERAL_DECIMAL: "6"
+  DEX_DEFAULT_SCALE: "6"
+
+  INSURANCE_ACCOUNT_ID: "1000"
+
+  MARKET_DATA_INTERVAL: "{{ .Values.env.MARKET_DATA_INTERVAL }}"
+  TEST_INDEX_TIMEFRAME: "{{ .Values.env.TEST_INDEX_TIMEFRAME }}"
+
+  APP_SIGNATURE_IGNORE: "{{ .Values.env.APP_SIGNATURE_IGNORE }}"
+
+  HEALTH_RPC_HOST: {{ .Values.env.HEALTH_RPC_HOST }}
+  HEALTH_NAMESPACE: {{ .Values.env.HEALTH_NAMESPACE }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-email
+  namespace: default
+  labels:
+    name: {{ .Values.name }}-email
+data:
+  MAIL_ENABLE: "true"

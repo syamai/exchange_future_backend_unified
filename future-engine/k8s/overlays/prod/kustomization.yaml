@@ -1,0 +1,76 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: matching-engine
+
+resources:
+  - ../../base
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+# Production image from ECR
+images:
+  - name: exchange/matching-engine-shard
+    newName: 123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/exchange/matching-engine-shard
+    newTag: v1.0.0
+
+# Production patches
+patches:
+  # Shard 1: Higher resources for BTC (highest volume)
+  - patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "4"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "8Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "8"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "12Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: SHARD_ID
+            value: "shard-1"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: SHARD_ROLE
+            value: "$(if [ \"${POD_NAME##*-}\" = \"0\" ]; then echo primary; else echo standby; fi)"
+          - name: ASSIGNED_SYMBOLS
+            value: "BTCUSDT,BTCBUSD,BTCUSDC"
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            valueFrom:
+              secretKeyRef:
+                name: matching-engine-secrets
+                key: KAFKA_BOOTSTRAP_SERVERS
+          - name: HEALTH_PORT
+            value: "8080"
+          - name: METRICS_PORT
+            value: "9090"
+          - name: JAVA_OPTS
+            value: "-Xms8g -Xmx8g -XX:+UseZGC -XX:+ZGenerational -XX:+HeapDumpOnOutOfMemoryError"
+    target:
+      kind: StatefulSet
+      name: matching-engine-shard-1
+
+# Secret for production Kafka (MSK)
+secretGenerator:
+  - name: matching-engine-secrets
+    behavior: replace
+    literals:
+      - KAFKA_BOOTSTRAP_SERVERS=b-1.exchange-msk.abcdef.c1.kafka.ap-southeast-1.amazonaws.com:9092,b-2.exchange-msk.abcdef.c1.kafka.ap-southeast-1.amazonaws.com:9092,b-3.exchange-msk.abcdef.c1.kafka.ap-southeast-1.amazonaws.com:9092
+
+# Additional production resources
+patchesStrategicMerge:
+  - namespace.yaml
+
+resources:
+  - network-policy.yaml

@@ -1,0 +1,31 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Development shard
+  - job_name: 'matching-engine-dev'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          shard: 'shard-dev'
+          role: 'primary'
+
+  # Production shards (uncomment when needed)
+  # - job_name: 'matching-engine-shard-1'
+  #   static_configs:
+  #     - targets: ['me-shard-1-primary:9090', 'me-shard-1-standby:9090']
+  #       labels:
+  #         shard: 'shard-1'
+
+  # - job_name: 'matching-engine-shard-2'
+  #   static_configs:
+  #     - targets: ['me-shard-2-primary:9090', 'me-shard-2-standby:9090']
+  #       labels:
+  #         shard: 'shard-2'
+
+  # - job_name: 'matching-engine-shard-3'
+  #   static_configs:
+  #     - targets: ['me-shard-3-primary:9090', 'me-shard-3-standby:9090']
+  #       labels:
+  #         shard: 'shard-3'

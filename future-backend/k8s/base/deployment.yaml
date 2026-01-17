@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-backend
+  namespace: future-backend
+  labels:
+    app: future-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: future-backend
+  template:
+    metadata:
+      labels:
+        app: future-backend
+    spec:
+      containers:
+        - name: future-backend
+          image: exchange/future-backend:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: future-backend-config
+                  key: NODE_ENV
+          envFrom:
+            - secretRef:
+                name: future-backend-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/local.yml
+              subPath: local.yml
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: config-volume
+          configMap:
+            name: future-backend-config
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"

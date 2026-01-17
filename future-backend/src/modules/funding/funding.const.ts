@@ -1,0 +1,12 @@
+export const SLEEPING_INTERVAL = 60000;
+export const FUNDING_PREFIX = "instrument_funding_rate_";
+export const FUNDING_TTL = 8 * 60 * 60;
+export const FUNDING_INTERVAL = 8 * 60 * 60 * 1000;
+export const START_FUNDING_RATE = "start_funding_rate";
+export const CLOSE_INSURANCE = "close_insurance";
+export const START_FUNDING_RATE_TTL = 7 * 60 * 60;
+export const CLOSE_INSURANCE_TTL = 7 * 60 * 60;
+export const KEY_CACHE_HEALTHCHECK_GET_FUNDING = "healthcheck_get_funding";
+export const KEY_CACHE_HEALTHCHECK_PAY_FUNDING = "healthcheck_pay_funding";
+export const NEXT_FUNDING = 8 * 60 * 60 * 1000;
+export const KEY_CACHE_HEALTHCHECK_GET_FUNDING_TTL = 60 * 60 + 9;

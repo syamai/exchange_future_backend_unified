@@ -1,0 +1,23 @@
+.docker
+.DS_*
+*.log
+logs
+**/*.backup.*
+**/*.back.*
+
+node_modules
+dist
+bower_components
+
+*.sublime*
+
+psd
+thumb
+sketch
+
+config/default.yml
+.env
+.qodo
+
+# Performance test results
+test/performance/results/

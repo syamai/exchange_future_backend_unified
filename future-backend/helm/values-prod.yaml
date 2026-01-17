@@ -1,0 +1,38 @@
+image:
+  repository: 487168310572.dkr.ecr.ap-southeast-1.amazonaws.com/sota-dex-prod-be
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+ingress:
+  enabled: true
+  class: nginx
+  hosts:
+    - host: api.sotadex.sotatek.works
+      paths:
+        - path: /
+          serviceName: sota-dex-backend
+
+allowOrigin: https://sotadex.sotatek.works
+
+env:
+  REDIS_HOST: "sota-dex-stg.dduban.0001.apse1.cache.amazonaws.com"
+  KAFKA_BROKERS: b-1.sota-dex-stg.xfibim.c4.kafka.ap-southeast-1.amazonaws.com:9092,b-2.sota-dex-stg.xfibim.c4.kafka.ap-southeast-1.amazonaws.com:9092
+
+  DEX_RPC_HOST: "https://rpc-221.sotatek.works"
+  DEX_CHAIN_ID: "221"
+  DEX_START_BLOCK: "141176"
+  DEX_ACTION_BATCH_SIZE: "80"
+  DEX_MAX_IN_PROGRESS_ACTION: "1"
+  BLOCK_TIME: "3000"
+
+  BLOCK_CONFIRM: "2"
+
+  MARKET_DATA_INTERVAL: "1800000"
+  TEST_INDEX_TIMEFRAME: "7200"
+
+  APP_SIGNATURE_IGNORE: "true"
+
+  HEALTH_RPC_HOST: https://rpc-221.sotatek.works
+  HEALTH_NAMESPACE: sota-dex-stg
+  

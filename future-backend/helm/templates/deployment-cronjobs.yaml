@@ -1,0 +1,65 @@
+{{- range .Values.cronjobs }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .name }}
+  labels:
+    app: {{ .name }}
+spec:
+  schedule: "{{ .schedule }}"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    metadata:
+    {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        app: {{ .name }}
+        version: {{ $.Values.image.tag }}
+    spec:
+      template:
+        spec:
+          containers:
+            - name: {{ .name }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              imagePullPolicy: Always
+              command:
+              {{- with .command }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              env:
+              - name: VERSION
+                value: {{ $.Values.image.tag }}
+              - name: MY_POD_NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: APP_NAME
+                value: {{ .name }}
+              envFrom:
+              {{- if $.Values.configmap_external.enabled }}
+              - configMapRef:
+                  name: {{ $.Values.name }}
+              {{- end }}
+              {{- if $.Values.secret_external.enabled }}
+              - secretRef:
+                  name: sota-dex
+              {{- end }}
+              resources:
+                {{- toYaml $.Values.resources | nindent 16 }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsGroup: 211000
+                runAsNonRoot: true
+                runAsUser: 211000
+          serviceAccountName: healthcheck
+          restartPolicy: OnFailure
+          {{- with $.Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+
+{{- end }}

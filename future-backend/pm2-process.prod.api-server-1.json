@@ -1,0 +1,16 @@
+{
+  "apps": [
+    {
+      "name": "solana-sota-dex-be",
+      "script": "yarn",
+      "args": "run start",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "sota-dex-get-funding-rate",
+      "script": "yarn",
+      "args": "console:dev start-get-funding-rate",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    }
+  ]
+}

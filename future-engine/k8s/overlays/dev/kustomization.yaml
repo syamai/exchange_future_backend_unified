@@ -1,0 +1,108 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: matching-engine-dev
+
+namePrefix: dev-
+
+resources:
+  - ../../base
+
+labels:
+  - pairs:
+      environment: development
+    includeSelectors: false
+
+# Local Docker image (1.0.0 tag)
+images:
+  - name: exchange/matching-engine-shard
+    newTag: "1.0.0"
+
+# Patches for Docker Desktop environment
+patches:
+  # Reduce replicas to 1 for dev (no standby)
+  - patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: StatefulSet
+
+  # Reduce resource requests for dev
+  - patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "250m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "1Gi"
+    target:
+      kind: StatefulSet
+
+  # Remove node selector, tolerations, and affinity for Docker Desktop
+  - patch: |
+      - op: remove
+        path: /spec/template/spec/nodeSelector
+      - op: remove
+        path: /spec/template/spec/tolerations
+      - op: remove
+        path: /spec/template/spec/affinity
+    target:
+      kind: StatefulSet
+
+  # Use IfNotPresent for local images
+  - patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+    target:
+      kind: StatefulSet
+
+  # Fix SHARD_ROLE for single replica (always PRIMARY)
+  - patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/env/2/value
+        value: "PRIMARY"
+    target:
+      kind: StatefulSet
+
+  # Remove volumeClaimTemplates and add emptyDir volumes for Docker Desktop
+  - patch: |
+      - op: remove
+        path: /spec/volumeClaimTemplates
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: logs
+          emptyDir: {}
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: heapdumps
+          emptyDir: {}
+    target:
+      kind: StatefulSet
+
+  # Update ConfigMap with dev settings
+  - patch: |
+      - op: replace
+        path: /data/JAVA_OPTS
+        value: "-Xms256m -Xmx512m -XX:+UseG1GC"
+    target:
+      kind: ConfigMap
+      name: matching-engine-config
+
+  # Update Secret with local Kafka address
+  - patch: |
+      - op: replace
+        path: /stringData/KAFKA_BOOTSTRAP_SERVERS
+        value: "host.docker.internal:19092"
+    target:
+      kind: Secret
+      name: matching-engine-secrets

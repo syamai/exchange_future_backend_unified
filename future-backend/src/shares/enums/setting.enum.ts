@@ -1,0 +1,15 @@
+export enum TP_SL_NOTIFICATION {
+  QUANTITY = 25,
+}
+
+export enum NOTIFICATION_KEY {
+  NOTIFICATION = "NOTIFICATION",
+}
+
+export enum MAIL {
+  EXCHANGE_SITE = "https://dr-cex.sotatek.works",
+  PHONE_SUPPORT = "PHONE_SUPPORT",
+  EMAIL_SUPPORT = "EMAIL_SUPPORT",
+  BANNER_IMAGE = "BANNER_IMAGE",
+  FOOTER_IMAGE = "FOOTER_IMAGE",
+}

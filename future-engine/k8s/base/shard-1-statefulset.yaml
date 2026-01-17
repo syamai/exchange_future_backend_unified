@@ -1,0 +1,170 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: matching-engine-shard-1
+  namespace: matching-engine
+  labels:
+    app.kubernetes.io/name: matching-engine
+    app.kubernetes.io/component: shard-1
+spec:
+  serviceName: matching-engine-shard-1
+  replicas: 2  # Primary + Standby
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: matching-engine
+      app.kubernetes.io/component: shard-1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: matching-engine
+        app.kubernetes.io/component: shard-1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: matching-engine
+      terminationGracePeriodSeconds: 60
+
+      # Anti-affinity: Primary and Standby on different nodes
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: matching-engine
+                  app.kubernetes.io/component: shard-1
+              topologyKey: kubernetes.io/hostname
+
+      # Prefer nodes with matching labels
+      nodeSelector:
+        node-role: matching-engine
+
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "matching-engine"
+          effect: "NoSchedule"
+
+      containers:
+        - name: matching-engine
+          image: exchange/matching-engine-shard:latest
+          imagePullPolicy: Always
+
+          env:
+            - name: SHARD_ID
+              value: "shard-1"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            # Role determined by pod ordinal (0=primary, 1=standby)
+            - name: SHARD_ROLE
+              value: "$(if [ \"${POD_NAME##*-}\" = \"0\" ]; then echo primary; else echo standby; fi)"
+            - name: ASSIGNED_SYMBOLS
+              value: "BTCUSDT,BTCBUSD,BTCUSDC"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: matching-engine-secrets
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: HEALTH_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: matching-engine-config
+                  key: HEALTH_PORT
+            - name: METRICS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: matching-engine-config
+                  key: METRICS_PORT
+            - name: JAVA_OPTS
+              value: "-Xms6g -Xmx6g $(JAVA_OPTS)"
+
+          envFrom:
+            - configMapRef:
+                name: matching-engine-config
+
+          ports:
+            - name: health
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+
+          resources:
+            requests:
+              cpu: "2"
+              memory: "6Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+            - name: heapdumps
+              mountPath: /app/heapdumps
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "sleep 10"  # Allow time for graceful shutdown
+
+      volumes:
+        - name: config
+          configMap:
+            name: matching-engine-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: logs
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 10Gi
+
+    - metadata:
+        name: heapdumps
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 20Gi

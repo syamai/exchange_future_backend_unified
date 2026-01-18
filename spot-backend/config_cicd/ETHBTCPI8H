@@ -1,0 +1,1 @@
+0 * * * * /usr/local/bin/php /var/www/gs-api/artisan margin:summary_index ETHBTCPI8H ETHBTCPI2H 8h >> /proc/1/fd/1 2>&1

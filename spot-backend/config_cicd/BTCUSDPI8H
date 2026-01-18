@@ -1,0 +1,1 @@
+0 * * * * /usr/local/bin/php /var/www/gs-api/artisan margin:summary_index BTCUSDPI8H BTCUSDPI2H 8h >> /proc/1/fd/1 2>&1

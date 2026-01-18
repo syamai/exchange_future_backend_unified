@@ -1,0 +1,49 @@
+FROM ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/ENV-dr-ex-base:php-8.1-fpm
+
+# Install system dependencies
+RUN apt-get update -y &&\
+    apt-get install -y libwebp-dev libjpeg62-turbo-dev libpng-dev libxpm-dev libfreetype6-dev libzip-dev zip &&\
+    apt-get install -y --no-install-recommends \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev &&\
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install gd pdo pdo_mysql bcmath pcntl sysvmsg sockets zip opcache
+
+RUN touch /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "upload_max_filesize = 80M;" >> /usr/local/etc/php/conf.d/uploads.ini
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+
+RUN git clone https://github.com/edenhill/librdkafka.git \
+    && cd librdkafka \
+    && ./configure \
+    && make \
+    && make install \
+    && pecl install rdkafka \
+    && docker-php-ext-enable rdkafka
+
+WORKDIR /app
+COPY . .
+RUN composer install --optimize-autoloader
+RUN composer dump-autoload --optimize
+RUN php artisan config:cache
+# RUN php artisan route:cache
+
+RUN php artisan storage:link && \
+    php artisan passport:keys && \
+    php artisan vendor:publish --provider "L5Swagger\L5SwaggerServiceProvider" && \
+    php artisan l5-swagger:generate
+
+RUN chown -R www-data:www-data /app/storage/api-docs
+
+RUN export RABBITMQ_PREFIX="exchange_"
+RUN echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-ram-limit.ini
+RUN echo -e 'opcache.enable=1\nopcache.revalidate_freq=0\nopcache.validate_timestamps=0\nopcache.max_accelerated_files=10000\nopcache.max_wasted_percentage=10\nopcache.interned_strings_buffer=16\nopcache.fast_shutdown=1\nopcache.enable_cli=1\nopcache.jit_buffer_size=50M\nopcache.jit=tracing' >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini

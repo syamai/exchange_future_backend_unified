@@ -1,0 +1,1 @@
+node microservices/order_processor/spotcommandresult.js

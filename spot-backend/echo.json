@@ -1,0 +1,5 @@
+{
+  "name": "exchange-socket",
+  "script": "laravel-echo-server",
+  "args": "start"
+}

@@ -1,0 +1,47 @@
+<ruleset name="PSR2-Custom">
+    <descrioption>Modifiled PSR-2</descrioption>
+
+    <file>./app</file>
+    <file>./database</file>
+    <file>./modules</file>
+    <file>./config</file>
+    <file>./tests</file>
+    <file>./sota_wallet</file>
+
+<!--    <exclude-pattern>./app/Console</exclude-pattern>-->
+<!--    <exclude-pattern>./app/Events</exclude-pattern>-->
+<!--    <exclude-pattern>./app/Exceptions</exclude-pattern>-->
+<!--    <exclude-pattern>./app/Jobs</exclude-pattern>-->
+<!--    <exclude-pattern>./app/Listeners</exclude-pattern>-->
+<!--    <exclude-pattern>./app/Providers</exclude-pattern>-->
+
+    <rule ref="PSR2">
+        <exclude name="Generic.Files.LineEndings"/>
+    </rule>
+    <rule ref="Generic.CodeAnalysis.EmptyStatement"/>
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+    <rule ref="Generic.CodeAnalysis.UselessOverridingMethod"/>
+    <rule ref="Generic.ControlStructures.InlineControlStructure"/>
+    <rule ref="Generic.NamingConventions.CamelCapsFunctionName"/>
+    <rule ref="Squiz.PHP.CommentedOutCode"/>
+    <rule ref="Squiz.WhiteSpace.OperatorSpacing"/>
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace">
+        <properties>
+            <property name="ignoreBlankLines" value="false"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="150"/>
+        </properties>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace.StartFile">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace.EndFile">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace.EmptyLines">
+        <severity>0</severity>
+    </rule>
+</ruleset>

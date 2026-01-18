@@ -1,0 +1,1 @@
+0,10,20,30,40,50 * * * * /usr/local/bin/php /var/www/gs-api/artisan margin:calculate_funding_rate BTCUSD >> /proc/1/fd/1 2>&1

@@ -1,0 +1,6 @@
+# The instructions for the first stage
+FROM oanhnn/laravel-echo-server
+
+COPY laravel-echo-server.json laravel-echo-server.json
+
+CMD ["start"]

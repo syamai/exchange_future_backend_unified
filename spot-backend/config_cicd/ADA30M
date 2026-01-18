@@ -1,0 +1,1 @@
+0,30 * * * * /usr/local/bin/php /var/www/gs-api/artisan margin:summary_index ADA30M ADA 30m >> /proc/1/fd/1 2>&1

@@ -1,0 +1,102 @@
+version: '3.3'
+
+networks:
+  dr-network:
+    driver: bridge
+
+volumes:
+  dr-volume:
+  db-data:
+
+services:
+  nginx:
+    image: "nginx:1.23.1"
+    container_name: nginx
+    hostname: nginx
+    restart: always
+    command: nginx -g "daemon off;"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - dr-volume:/var/www/html
+    networks:
+      - dr-network
+    ports:
+      - "82:80"
+    links:
+      - php
+
+  php:
+    container_name: drcex
+    hostname: php
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - dr-volume:/var/www/html
+    networks:
+      - dr-network
+    # ports:
+    #   - "9000:9000"
+    links:
+      - db
+      - redis
+      - rabbitmq
+
+  redis:
+    image: "redis:alpine"
+    hostname: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - dr-network
+  db:
+    image: "mysql:8.0"
+    hostname: db
+    volumes:
+      # - ./my.cnf:/etc/mysql/my.cnf
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=1
+      - MYSQL_PASSWORD=1
+      - MYSQL_DATABASE=backend
+    ports:
+      - "3303:3306"
+    networks:
+      - dr-network
+  echo-server:
+    # image: "lagun4ik/laravel-echo-server"
+    # image: "oanhnn/laravel-echo-server"
+    hostname: socket
+    build:
+      context: .
+      dockerfile: Dockerfile_socket
+    ports:
+      - "6001:6001"
+    volumes:
+      - .:/app
+    links:
+      - redis
+      - php
+    networks:
+      - dr-network
+  rabbitmq:
+    image: "rabbitmq:3.8.0-management"
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_NODENAME: "rabbitmq"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - dr-network
+  mailhog:
+    image: mailhog/mailhog
+    hostname: mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - dr-network

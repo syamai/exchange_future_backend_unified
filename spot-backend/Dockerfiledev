@@ -1,0 +1,81 @@
+# MAINTAINER Tung Pham <tungpv.it@gmail.com>
+
+# The instructions for the first stage
+FROM node:10-alpine as builder
+WORKDIR /app
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
+
+RUN apk --no-cache add python make g++
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run production
+
+FROM php:7.1-cli as phpbuilder
+
+RUN apt-get update &&\
+    apt-get install apt-utils curl gnupg -y &&\
+    apt-get install unzip zip libcurl4-openssl-dev libc-client-dev libkrb5-dev cron zlib1g-dev libpng-dev -y &&\
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer &&\
+    docker-php-ext-configure gd --with-png-dir=/usr/include/ && \
+    docker-php-ext-install -j$(nproc) gd &&\
+    docker-php-ext-install pdo_mysql bcmath curl opcache zip &&\
+    docker-php-ext-install sockets
+
+RUN composer global require hirak/prestissimo
+WORKDIR /app
+COPY . .
+RUN composer install
+RUN composer dump-autoload
+
+
+# The instructions for second stage
+FROM php:7.1-apache
+
+ENV \
+  APP_DIR="/var/www/amanpuri-api" \
+  APP_PORT="80"
+
+RUN apt-get update &&\
+    apt-get install apt-utils curl gnupg -y &&\
+    apt-get install unzip zip libcurl4-openssl-dev libc-client-dev libkrb5-dev cron zlib1g-dev libpng-dev -y &&\
+    docker-php-ext-configure gd --with-png-dir=/usr/include/ && \
+    docker-php-ext-install -j$(nproc) gd &&\
+    docker-php-ext-install pdo_mysql bcmath curl opcache zip &&\
+    docker-php-ext-install sockets &&\
+    cd /etc/apache2/mods-enabled &&\
+    ln -s ../mods-available/rewrite.load ./ &&\
+    ln -s /dev/stdout /var/log/apache2/access_atslp.log &&\
+    ln -s /dev/stdout /var/log/apache2/access_crmlp.log &&\
+    ln -s /dev/stdout /var/log/apache2/access_firstlp.log &&\
+    ln -s /dev/stdout /var/log/apache2/access_top.log &&\
+    ln -s /dev/stderr /var/log/apache2/error_atslp.log &&\
+    ln -s /dev/stderr /var/log/apache2/error_crmlp.log &&\
+    ln -s /dev/stderr /var/log/apache2/error_firstlp.log &&\
+    ln -s /dev/stderr /var/log/apache2/error_top.log
+
+CMD ["/usr/local/bin/run.sh"]
+
+COPY . $APP_DIR
+
+WORKDIR $APP_DIR
+
+COPY --from=builder /app/public/ public/
+COPY --from=phpbuilder /app/vendor vendor/
+
+RUN php artisan key:generate && \
+	php artisan storage:link && \
+	php artisan passport:keys
+
+RUN chown -R www-data:www-data ${APP_DIR} && \
+	chmod -R 775 ${APP_DIR}/storage && \
+	chmod -R 775 ${APP_DIR}/bootstrap/cache
+
+ADD docker/apache-config.conf /etc/apache2/sites-enabled/000-default.conf
+
+EXPOSE 80
+
+CMD /usr/sbin/apache2ctl -D FOREGROUND

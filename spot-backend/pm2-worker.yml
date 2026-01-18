@@ -1,0 +1,159 @@
+apps:
+#  - name: 14_process_margin_order
+#    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/14_process_margin_order.sh exchange_
+#    instances: 1
+#  - name: 17_cancel_margin_order
+#    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/17_cancel_margin_order.sh exchange_
+#    instances: 1
+  - name: 37_calculate_pnl_profit
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/37_calculate_pnl_profit.sh
+    instances: 1
+#  - name: AMI_BTC
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - BTC
+#      - AMI
+#  - name: summary_index_ETH
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETH
+#      - AMI_ETH
+#      - 1m
+#  - name: summary_index_ETH_BTC
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETH_BTC
+#      - AMI_ETH_BTC
+#      - 1m
+#  - name: summary_index_BMI_BTC
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BMI_BTC
+#      - AMI_BMI_BTC
+#      - 1m
+#  - name: close_reduce_only
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:close_reduce_only
+#    instances: 1
+#  - name: LIQUIDATION
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:liquid
+#  - name: TRIGGER_IFD_ORDER
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:trigger_ifd_order
+  - name: amanpuri_01_order_processor
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/01_order_processor.sh
+    instances: 1
+  - name: amanpuri_37_calculate_pnl_profit
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/37_calculate_pnl_profit.sh
+    instances: 1
+  - name: amanpuri_02_send_orderbook
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/02_send_orderbook.sh
+    instances: 1
+  - name: amanpuri_03_send_user_orderbook
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/03_send_user_orderbook.sh
+    instances: 1
+  - name: amanpuri_04_send_balance
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/04_send_balance.sh
+    instances: 1
+  - name: amanpuri_05_send_order_list
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/05_send_order_list.sh
+    instances: 1
+  - name: amanpuri_06_send_prices
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/06_send_prices.sh
+    instances: 1
+  - name: amanpuri_07_send_order_event
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/07_send_order_event.sh
+    instances: 1
+  - name: amanpuri_08_send_admin_notification
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/08_send_admin_notification.sh
+    instances: 1
+  - name: amanpuri_09_send_favorite_symbols
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/09_send_favorite_symbols.sh
+    instances: 1
+  - name: amanpuri_10_update_price
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/10_update_price.sh
+    instances: 1
+  - name: amanpuri_11_update_orderbook
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/11_update_orderbook.sh
+    instances: 1
+  - name: amanpuri_12_trigger_stop_order
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/12_trigger_stop_order.sh
+    instances: 1
+  # Matching engine workers - scaled to 10 instances for higher TPS
+  - name: amanpuri_13_process_order
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/13_process_order.sh exchange_
+    instances: 10
+  - name: amanpuri_22_calculate_referral_commission
+    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/bin/queue/22_calculate_referral_commission.sh
+    instances: 1
+#  - name: margin_matching_engine_BTCUSD
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:process_order
+#      - BTCUSD
+#  - name: margin_matching_engine_ETHBTC
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:process_order
+#      - ETHBTC
+#  - name: margin_matching_engine_ETHUSD
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:process_order
+#      - ETHUSD
+#  - name: matching_engines
+#    script: /home/sotatek/gs-ex/GS-CEX-QUEUE/microservices/margin/matching_engines.js
+#    instances: 1
+  #Update last price
+#  - name: margin_update_last_price_BTCUSD
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:last_price
+#      - BTCUSD
+#    instances: 1
+#  - name: margin_update_last_price_ETHBTC
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:last_price
+#      - ETHBTC
+#    instances: 1
+#  - name: margin_update_last_price_ETHUSD
+#    script: php
+#    cwd: /home/sotatek/gs-ex/GS-CEX-QUEUE
+#    args:
+#      - artisan
+#      - margin:last_price
+#      - ETHUSD
+#    instances: 1

@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: exchange-api-config
+  namespace: exchange-stg
+data:
+  APP_NAME: "Sotatek Exchange"
+  APP_SHORT_NAME: "SOTA-EX"
+  APP_ENV: "production"
+  APP_KEY: "base64:XX78Q//BRNj3TZkwHW3D9LBsUchUt++Fexy11Jpy88c="
+  APP_DEBUG: "false"
+  APP_LOG_LEVEL: "debug"
+  APP_LOG: "errorlog"
+  APP_URL: "https://api.exchange.sotatek.com"
+  WEB_URL: "https://exchange.sotatek.com"
+  SOCKET_URL: "https://socket.exchange.sotatek.com"
+  API_URL: "https://api.exchange.sotatek.com"
+  CLIENT_SECRET: "nFzLk7YjUzI2Qorhb43etp7ZSZYMdJ1PiJJUtWbN"
+  MIX_CLIENT_SECRET: "nFzLk7YjUzI2Qorhb43etp7ZSZYMdJ1PiJJUtWbN"
+  MIX_CLIENT_ID: "1"
+  MIX_LINE_CLIENT_ID: "ICLV4uFZdfWPamsiAjFvgE"
+  MIX_API_TELEGRAM: "https://telegram.me/AmanpuriBot?start="
+  MIX_BASE_ZENDESK_URL: "https://amanpuri-exchange.zendesk.com/hc"
+  OP_CHECKING_INTERVAl: "15000"
+
+  FLUENTD_HOST: "fluentd"
+  FLUENTD_PORT: "24224"
+  ALWAYS_PUSH_FLUENTD: "true"
+
+  DB_CONNECTION: "mysql"
+  DB_PORT: "3306"
+  DB_HOST: "192.168.1.205"
+  DB_DATABASE: "exchange"
+  DB_USERNAME: "root"
+  DB_PASSWORD: "1"
+  SLAVE_DB_HOST: "192.168.1.205"
+  SLAVE_DB_USERNAME: "root"
+  SLAVE_DB_PASSWORD: "1"
+
+  BROADCAST_DRIVER: "redis"
+  CACHE_DRIVER: "redis"
+  SESSION_DRIVER: "redis"
+  QUEUE_DRIVER: "database"
+
+  REDIS_HOST: "192.168.1.205"
+  REDIS_PORT: "6382"
+  OP_REDIS_HOST: "192.168.1.205"
+  OP_REDIS_PASSWORD: "null"
+  OP_REDIS_PORT: "6382"
+  RABBITMQ_HOST: "192.168.1.205"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_LOGIN: admin
+  RABBITMQ_PASSWORD: "1"
+  RABBITMQ_PREFIX: "exchange_"
+
+  MAIL_DRIVER: "smtp"
+  MAIL_HOST: "smtp.gmail.com"
+  MAIL_PORT: "587"
+  MAIL_ENCRYPTION: "tls"
+  MAIL_USERNAME: "noreply1.sotatek@gmail.com"
+  MAIL_PASSWORD: "tccmuysdlwxkqmty"
+  MAIL_FROM_NAME: "Sotatek Exchange"
+  MAIL_FROM_ADDRESS: "noreply1.sotatek@gmail.com"
+
+  ZENDESK_DOMAIN: "https://sotatek-exchange.zendesk.com"
+  ZENDESK_SECRET_KEY: "o8xUccy9AR6RPgo30JZZilPveoxysmXsHf22vAs6w46VJsUs"
+
+  AMANPURI_ENCRYPTION_KEY: "Dv5B733LjyY41ChSPGbt26O63HiBHqRZ"
+  MIX_BLOCKCHAIN_NETWORK: "testnet"
+
+  EOS_ACCOUNT: "testamanpuri"
+  API_KEY_COINMARKET: "c25efe39-c4d8-4831-8acb-0c1d868d62bd"
+  TELEGRAM_TOKEN: "840843915:AAGNo--L794jAMGgrTKfJcKzAUuYr4umtKM"
+  LINE_CLIENT_ID: "ICLV4uFZdfWPamsiAjFvgE"
+  LINE_CLIENT_SECRET: "M0IXZf8joQqMJ8CZRW8do7o2l5CvUq7icoyrnc1lNjL"
+
+  API_WALLET: "http://sotatek-wallet-service"
+  PORT_WALLET: "9000"
+
+  GOOGLE_RECAPTCHA_KEY: "6LeESgEVAAAAACHTj-EAfW_NR0JRF4louY5YiVyW"
+  GOOGLE_RECAPTCHA_SECRET: "6LeESgEVAAAAAHlOBTvPrdYfAgnhUghuWSgyc_E4"
+  GOOGLE_RECAPTCHA_URI: "https://google.com/recaptcha/api/"
+
+
+  OPERATION_BUG_MAIL: "test@sotatek.com"
+  TOKEN_EXPIRE_TIME: "120"
+
+  ENCRYPT_KEY: "6fe17230cd48b9a5"
+  PERCISION_ROUND: "0.000000001"
+  DIVIDEND_ENABLE_SPECIAL_TYPE: "1"
+  DIVIDEND_ENABLE_ADMIN_TYPE: "0"
+  THROTTLE_API_MARGIN_MAX_REQUESTS: "10"
+  THROTTLE_API_MARGIN_DURING_SECONDS: "1"
+  ALLOW_BOT_TRADING_VOLUME_RANKING: "1"
+
+  GEE_ID: d29a3"52c9bce5689e83873e5f192c165
+  GEE_KEY: "1ef9d24424294ccf16c9957e0978811c"
+  

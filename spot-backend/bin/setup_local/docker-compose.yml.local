@@ -1,0 +1,93 @@
+version: '3'
+
+networks:
+    gs-network:
+        driver: bridge
+
+volumes:
+    gs-volume:
+        driver_opts:
+            device: ${PWD}
+            type: bind
+            o: bind
+
+services:
+    php:
+        container_name: gscex
+        hostname: php
+        restart: always
+        build: .
+        volumes:
+            - gs-volume:/var/www/gscex
+        networks:
+            - gs-network
+        #    ports:
+        #      - "8003:80"
+        links:
+            - db
+            - redis
+            - rabbitmq
+        environment:
+            - PHP_MEMORY_LIMIT=-1
+
+    httpd:
+        container_name: httpd-gs
+        image: "httpd:latest"
+        hostname: httpd
+        restart: always
+        networks:
+            - gs-network
+        volumes:
+            - gs-volume:/var/www/gscex
+            - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
+        ports:
+            - "8001:80"
+    redis:
+        image: "redis:alpine"
+        ports:
+            - "6393:6379"
+        networks:
+            - gs-network
+    db:
+        image: "mysql:8.0"
+        hostname: db
+        volumes:
+            - ./my.cnf:/etc/mysql/my.cnf
+        environment:
+            - MYSQL_ROOT_PASSWORD=1
+            - MYSQL_PASSWORD=1
+            - MYSQL_DATABASE=gscex
+        ports:
+            - "3303:3306"
+        networks:
+            - gs-network
+    echo-server:
+        image: "lagun4ik/laravel-echo-server"
+        ports:
+            - "6001:6001"
+        volumes:
+            - .:/app
+        links:
+            - redis
+            - php
+        networks:
+            - gs-network
+    rabbitmq:
+        image: "rabbitmq:3.8.0-management"
+        environment:
+            RABBITMQ_NODENAME: "rab"
+        ports:
+            - "5673:5672"
+            - "15673:15672"
+        networks:
+            - gs-network
+    mailhog:
+        image: mailhog/mailhog
+        hostname: mailhog
+        logging:
+            driver: 'none'  # disable saving logs
+        ports:
+            - 1025:1025 # smtp server
+            - 8025:8025 # web ui
+        networks:
+            - gs-network

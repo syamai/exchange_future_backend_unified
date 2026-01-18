@@ -1,0 +1,59 @@
+FROM node:10-alpine as builder
+WORKDIR /app
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
+
+RUN apk --no-cache add python make g++
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run production
+
+FROM php:7.1-cli as phpbuilder
+
+RUN apt-get update &&\
+    apt-get install apt-utils curl gnupg -y &&\
+    apt-get install unzip zip libcurl4-openssl-dev libc-client-dev libkrb5-dev cron zlib1g-dev libpng-dev -y &&\
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer &&\
+    docker-php-ext-configure gd --with-png-dir=/usr/include/ && \
+    docker-php-ext-install -j$(nproc) gd &&\
+    docker-php-ext-install pdo_mysql bcmath curl opcache zip &&\
+    docker-php-ext-install sockets
+
+RUN composer global require hirak/prestissimo
+WORKDIR /app
+COPY . .
+RUN composer install
+RUN composer dump-autoload
+
+
+FROM php:7.1-cli
+RUN apt-get update \
+    && apt-get install -y vim curl cron libmagickwand-dev imagemagick \
+    && curl -sL https://deb.nodesource.com/setup_10.x | bash - \
+    && apt-get -y install nodejs \
+    && ln -s /usr/bin/nodejs /usr/local/bin/node \
+    && npm i -g pm2@3.4.0
+RUN docker-php-ext-install intl pdo_mysql bcmath \
+    && pecl install redis imagick \
+    && docker-php-ext-enable opcache redis imagick \
+    && cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+RUN apt-get clean \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ARG LARAVEL_PATH=/var/www/amanpuri-api
+WORKDIR ${LARAVEL_PATH}
+
+COPY . ${LARAVEL_PATH}
+COPY --from=phpbuilder /app/vendor/ ${LARAVEL_PATH}/vendor/
+COPY --from=builder /app/public/ public/
+
+RUN cd ${LARAVEL_PATH} \
+      && php artisan package:discover
+
+RUN npm i && npm install -g dotenv
+
+CMD tail -f /dev/null

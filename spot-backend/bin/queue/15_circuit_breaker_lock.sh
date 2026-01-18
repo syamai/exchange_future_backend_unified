@@ -1,0 +1,1 @@
+php artisan circuit_breaker:check_price_process

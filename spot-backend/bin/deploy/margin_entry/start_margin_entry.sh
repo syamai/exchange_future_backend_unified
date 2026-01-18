@@ -1,0 +1,1 @@
+pm2 startOrRestart ./bin/deploy/margin_entry/margin_entry.config.js

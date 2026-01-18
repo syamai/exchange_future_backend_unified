@@ -1,0 +1,1 @@
+pm2 startOrRestart ./bin/deploy/mam/mam.config.js

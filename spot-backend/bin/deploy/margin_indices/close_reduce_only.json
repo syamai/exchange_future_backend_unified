@@ -1,0 +1,5 @@
+{
+  "name": "CLOSE_REDUCE_ONLY",
+  "script": "php",
+  "args": "artisan margin:close_reduce_only"
+}

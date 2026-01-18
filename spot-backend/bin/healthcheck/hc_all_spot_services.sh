@@ -1,0 +1,11 @@
+#!/bin/sh
+./bin/healthcheck/hc_dividend_all.sh
+./bin/healthcheck/hc_unprocessed_order.sh
+./bin/healthcheck/hc_matching_engine.sh
+./bin/healthcheck/hc_update_price.sh
+./bin/healthcheck/hc_update_order_book.sh
+./bin/healthcheck/hc_stop_order.sh
+./bin/healthcheck/hc_referral.sh
+./bin/healthcheck/hc_circuit_breaker_lock.sh
+./bin/healthcheck/hc_circuit_breaker_unlock.sh
+./bin/healthcheck/hc_trading_volume_ranking.sh

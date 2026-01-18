@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "symbol": "BTCUSD",
+    "impact_bid_price": 0.0,
+    "impact_mid_price": 0.0,
+    "impact_ask_price": 0.0,
+    "fair_basis_rate": 0.0,
+    "fair_basis": 0.0,
+    "fair_price": 0.0,
+    "mark_price": 0.0,
+    "funding_timestamp": null,
+    "funding_rate": 0.0,
+    "indicative_funding_rate": 0.0,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 2,
+    "symbol": "ETHUSD",
+    "impact_bid_price": 0.0,
+    "impact_mid_price": 0.0,
+    "impact_ask_price": 0.0,
+    "fair_basis_rate": 0.0,
+    "fair_basis": 0.0,
+    "fair_price": 0.0,
+    "mark_price": 0.0,
+    "funding_timestamp": null,
+    "funding_rate": 0.0,
+    "indicative_funding_rate": 0.0,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 3,
+    "symbol": "ETHBTC",
+    "impact_bid_price": 0.0,
+    "impact_mid_price": 0.0,
+    "impact_ask_price": 0.0,
+    "fair_basis_rate": 0.0,
+    "fair_basis": 0.0,
+    "fair_price": 0.0,
+    "mark_price": 0.0,
+    "funding_timestamp": null,
+    "funding_rate": 0.0,
+    "indicative_funding_rate": 0.0,
+    "created_at": null,
+    "updated_at": null
+  }
+]

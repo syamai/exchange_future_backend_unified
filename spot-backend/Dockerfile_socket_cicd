@@ -1,0 +1,6 @@
+# The instructions for the first stage
+FROM ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/ENV-dr-ex-base:oanhnn-laravel-echo-server
+
+COPY laravel-echo-server-cicd.json laravel-echo-server.json
+
+CMD ["start"]

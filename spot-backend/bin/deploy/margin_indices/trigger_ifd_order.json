@@ -1,0 +1,5 @@
+{
+  "name": "TRIGGER_IFD_ORDER",
+  "script": "php",
+  "args": "artisan margin:trigger_ifd_order"
+}

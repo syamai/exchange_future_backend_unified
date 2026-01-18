@@ -1,0 +1,1 @@
+php artisan trading_volume_ranking_spot:update

@@ -1,0 +1,5 @@
+{
+  "name": "LIQUIDATION",
+  "script": "php",
+  "args": "artisan margin:liquid"
+}

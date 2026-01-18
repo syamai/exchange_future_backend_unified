@@ -1,0 +1,5 @@
+{
+  "name": "TRIGGER_STOP_ORDER",
+  "script": "php",
+  "args": "artisan margin:trigger_stop_order"
+}

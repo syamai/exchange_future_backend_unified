@@ -1,0 +1,21 @@
+services:
+  laravel-cron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_cron
+    volumes:
+      - ../backend:/app
+      - .:/app/laravel-cron
+      - ./logs:/logs
+    working_dir: /app
+    environment:
+      - COMPOSER_MEMORY_LIMIT=-1
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"

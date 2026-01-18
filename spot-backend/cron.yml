@@ -1,0 +1,855 @@
+---
+apps:
+  - name: amanpuri_01_order_processor
+    script:  /var/www/amanpuri-api/bin/queue/01_order_processor.sh
+    instances: 1
+  - name: amanpuri_02_send_orderbook
+    script: /var/www/amanpuri-api/bin/queue/02_send_orderbook.sh
+    instances: 1
+  - name: amanpuri_03_send_user_orderbook
+    script: /var/www/amanpuri-api/bin/queue/03_send_user_orderbook.sh
+    instances: 1
+  - name: amanpuri_04_send_balance
+    script: /var/www/amanpuri-api/bin/queue/04_send_balance.sh
+    instances: 1
+  - name: amanpuri_05_send_order_list
+    script: /var/www/amanpuri-api/bin/queue/05_send_order_list.sh
+    instances: 1
+  - name: amanpuri_06_send_prices
+    script: /var/www/amanpuri-api/bin/queue/06_send_prices.sh
+    instances: 1
+  - name: amanpuri_07_send_order_event
+    script: /var/www/amanpuri-api/bin/queue/07_send_order_event.sh
+    instances: 1
+  - name: amanpuri_08_send_admin_notification
+    script: /var/www/amanpuri-api/bin/queue/08_send_admin_notification.sh
+    instances: 1
+  - name: amanpuri_09_send_favorite_symbols
+    script: /var/www/amanpuri-api/bin/queue/09_send_favorite_symbols.sh
+    instances: 1
+  - name: amanpuri_12_trigger_stop_order
+    script: /var/www/amanpuri-api/bin/queue/12_trigger_stop_order.sh
+    instances: 1
+  # Matching engine workers - scaled to 10 instances for higher TPS
+  - name: amanpuri_13_process_order
+    script: /var/www/amanpuri-api/bin/queue/13_process_order.sh
+    instances: 10
+  - name: amanpuri_21_update_user_transaction
+    script: /var/www/amanpuri-api/bin/queue/21_update_user_transaction.sh
+    instances: 1
+  - name: amanpuri_22_calculate_referral_commission
+    script: /var/www/amanpuri-api/bin/queue/22_calculate_referral_commission.sh
+    instances: 1
+  - name: amanpuri_10_update_price
+    script: /var/www/amanpuri-api/bin/queue/10_update_price.sh
+    instances: 1
+  - name: amanpuri_11_update_orderbook
+    script: /var/www/amanpuri-api/bin/queue/11_update_orderbook.sh
+    instances: 1
+  # Removed duplicate workers (13b, 13c) - now using instances: 10 above
+
+  # Phase 3: Stream-based Matching Engine (enable with USE_STREAM_MATCHING_ENGINE=true)
+  # Uncomment below and comment out amanpuri_13_process_order to use stream mode
+#  - name: stream_matching_engine_btc_usdt
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - matching-engine:stream
+#      - usdt
+#      - btc
+#      - --stats
+#    instances: 1
+#  - name: stream_matching_engine_eth_usdt
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - matching-engine:stream
+#      - usdt
+#      - eth
+#      - --stats
+#    instances: 1
+#  - name: stream_matching_engine_bnb_usdt
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - matching-engine:stream
+#      - usdt
+#      - bnb
+#      - --stats
+#    instances: 1
+
+  # Phase 4: Swoole Coroutine-based Matching Engine (highest performance)
+  # Requires Swoole extension installed. Enable with USE_SWOOLE_MATCHING_ENGINE=true
+  # Achieves 5,000+ TPS with coroutine-based async processing
+#  - name: swoole_matching_engine_btc_usdt
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - matching-engine:swoole
+#      - usdt
+#      - btc
+#      - --workers=4
+#    instances: 1
+#  - name: swoole_matching_engine_eth_usdt
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - matching-engine:swoole
+#      - usdt
+#      - eth
+#      - --workers=4
+#    instances: 1
+#  - name: swoole_matching_engine_bnb_usdt
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - matching-engine:swoole
+#      - usdt
+#      - bnb
+#      - --workers=4
+#    instances: 1
+
+#  - name: 14_process_margin_order
+#    script: /var/www/amanpuri-api/bin/queue/14_process_margin_order.sh
+#    instances: 1
+#  - name: 17_cancel_margin_order
+#    script: /var/www/amanpuri-api/bin/queue/17_cancel_margin_order.sh
+#    instances: 1
+#  - name: TRIGGER_STOP_ORDER
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:trigger_stop_order
+#    instances: 1
+#  - name: TRIGGER_IFD_ORDER
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:trigger_ifd_order
+#    instances: 1
+#  - name: LIQUIDATION
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:liquid
+#    instances: 1
+#  - name: AUTO_DELEVERAGE
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:deleverage
+#    instances: 1
+#  - name: matching_engines
+#    script: /var/www/amanpuri-api/microservices/margin/matching_engines.js
+#    instances: 1
+#  - name: 14_process_margin_order2
+#    script: /var/www/amanpuri-api/bin/queue/14_process_margin_order.sh
+#    instances: 1
+#  - name: 14_process_margin_order3
+#    script: /var/www/amanpuri-api/bin/queue/14_process_margin_order.sh
+#    instances: 1
+#  - name: 14_process_margin_order4
+#    script: /var/www/amanpuri-api/bin/queue/14_process_margin_order.sh
+#    instances: 1
+#  - name: 14_process_margin_order1
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:process_order
+#      - ETHUSD
+#    instances: 1
+#  - name: process_order1
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:process_order
+#      - ETHBTC
+#    instances: 1
+#  - name: process_order2
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:process_order
+#      - BTCUSD
+#    instances: 1
+#  - name: 27_trading_volume_ranking_margin
+#    script: /var/www/amanpuri-api/bin/queue/27_trading_volume_ranking_margin.sh
+#    instances: 1
+#  - name: 28_margin_update_leaderboard
+#    script: /var/www/amanpuri-api/bin/queue/28_margin_update_leaderboard.sh
+#    instances: 1
+#  - name: OKEX_BTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - BTC
+#      - OKEX
+#    instances: 1
+#  - name: AMI_BTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - BTC
+#      - AMI
+#    instances: 1
+#  - name: ETH_OKEX
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - ETH
+#      - OKEX
+#    instances: 1
+#  - name: ETH_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - ETH
+#      - AMI
+#    instances: 1
+#  - name: ETH_BTC_OKEX
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - ETH_BTC
+#      - OKEX
+#    instances: 1
+#  - name: ETH_BTC_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - ETH_BTC
+#      - AMI
+#    instances: 1
+#  - name: ADA_BMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - ADA
+#      - BMI
+#    instances: 1
+#  - name: ADA_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - ADA
+#      - AMI
+#    instances: 1
+#  - name: BCH_BMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - BCH
+#      - BMI
+#    instances: 1
+#  - name: BCH_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - BCH
+#      - AMI
+#    instances: 1
+#  - name: EOS_BMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - EOS
+#      - BMI
+#    instances: 1
+#  - name: EOS_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - EOS
+#      - AMI
+#    instances: 1
+#  - name: LTC_BMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - LTC
+#      - BMI
+#    instances: 1
+#  - name: LTC_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - LTC
+#      - AMI
+#    instances: 1
+#  - name: TRX_BMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - TRX
+#      - BMI
+#    instances: 1
+#  - name: TRX_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - TRX
+#      - AMI
+#    instances: 1
+#  - name: XRP_BMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - XRP
+#      - BMI
+#    instances: 1
+#  - name: XRP_AMI
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:start_clone_price
+#      - XRP
+#      - AMI
+#    instances: 1
+#  - name: BTC_USD
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:last_price
+#      - BTCUSD
+#    instances: 1
+#  - name: BTCUSD1
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:impact_price
+#      - BTCUSD
+#    instances: 1
+#  - name: BTCUSD2
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:premium_index
+#      - BTCUSD
+#    instances: 1
+#  - name: BTCUSD3
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:pay_funding
+#      - BTCUSD
+#    instances: 1
+#  - name: ETHUSD1
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:last_price
+#      - ETHUSD
+#    instances: 1
+#  - name: ETHUSD2
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:impact_price
+#      - ETHUSD
+#    instances: 1
+#  - name: ETHUSD3
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:pay_funding
+#      - ETHUSD
+#    instances: 1
+#  - name: ETHBTC1
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:last_price
+#      - ETHBTC
+#    instances: 1
+#  - name: ETHBTC2
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:impact_price
+#      - ETHBTC
+#    instances: 1
+#  - name: ETHBTC3
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:pay_funding
+#      - ETHBTC
+#    instances: 1
+#  - name: 29_margin_update_profit
+#    script: /var/www/amanpuri-api/bin/queue/29_margin_update_profit.sh
+#    instances: 1
+#  - name: close_reduce_only
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:close_reduce_only
+#    instances: 1
+#  - name: RUN_LARAVEL
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - schedule:run
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  # - name:
+#  #   script: php
+#  #   cwd: /var/www/amanpuri-api
+#  #   args:
+#  #     - artisan
+#  #     -
+#  #   cron_restart:
+#  #   instances: 1
+#  - name: summary_index_BTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BTC
+#      - AMI_BTC
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_BTC30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BTC30M
+#      - BTC
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: constant_index_BTCBON
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:constant_index
+#      - BTCBON
+#      - 0.0003
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_BTCBON2H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BTCBON2H
+#      - BTCBON
+#      - 2h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_BTCBON8H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BTCBON8H
+#      - BTCBON2H
+#      - 8h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_ETH
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETH
+#      - AMI_ETH
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_ETH30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETH30M
+#      - ETH
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: constant_index_ETHBON
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:constant_index
+#      - ETHBON
+#      - 0.0003
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_ETHBON2H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETHBON2H
+#      - ETHBON
+#      - 2h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_ETHBON8H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETHBON8H
+#      - ETHBON2H
+#      - 8h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: constant_index_USDBON
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:constant_index
+#      - USDBON
+#      - 0.0006
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_USDBON2H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - artisan margin:summary_index
+#      - USDBON2H
+#      - USDBON
+#      - 2h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_USDBON8H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - USDBON8H
+#      - USDBON2H
+#      - 8h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_ETH_BTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETH_BTC
+#      - AMI_ETH_BTC
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_ETH_BTC30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETH_BTC30M
+#      - ETH_BTC
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_ADA
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ADA
+#      - AMI_ADA
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_ADA30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ADA30M
+#      - ADA
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_BCH
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BCH
+#      - AMI_BCH
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_BCH30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BCH30M
+#      - BCH
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_EOS
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - EOS
+#      - AMI_EOS
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_EOS30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - EOS30M
+#      - EOS
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_LTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - LTC
+#      - AMI_LTC
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_LTC30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - LTC30M
+#      - LTC
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_TRX
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - TRX
+#      - AMI_TRX
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_TRX30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - TRX30M
+#      - TRX
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_XRP
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - XRP
+#      - AMI_XRP
+#      - 1m
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_XRP30M
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - XRP30M
+#      - XRP
+#      - 30m
+#    cron_restart: "0,30 * * * *"
+#    instances: 1
+#  - name: summary_index_BTCUSDPI2H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - BTCUSDPI2H
+#      - BTCUSDPI
+#      - 2h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: calculate_funding_rate_BTCUSD
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:calculate_funding_rate
+#      - BTCUSD
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: premium_index_ETHUSD
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:premium_index
+#      - ETHUSD
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_ETHUSDPI2H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETHUSDPI2H
+#      - ETHUSDPI
+#      - 2h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_ETHUSDPI8H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETHUSDPI8H
+#      - ETHUSDPI2H
+#      - 8h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: calculate_funding_rate_ETHUSD
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:calculate_funding_rate
+#      - ETHUSD
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: premium_index_ETHBTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:premium_index
+#      - ETHBTC
+#    cron_restart: "* * * * *"
+#    instances: 1
+#  - name: summary_index_ETHBTCPI2H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETHBTCPI2H
+#      - ETHBTCPI
+#      - 2h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: summary_index_ETHBTCPI8H
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:summary_index
+#      - ETHBTCPI8H
+#      - ETHBTCPI2H
+#      - 8h
+#    cron_restart: "0 * * * *"
+#    instances: 1
+#  - name: calculate_funding_rate_ETHBTC
+#    script: php
+#    cwd: /var/www/amanpuri-api
+#    args:
+#      - artisan
+#      - margin:calculate_funding_rate
+#      - ETHBTC
+#    cron_restart: "0 * * * *"
+#    instances: 1

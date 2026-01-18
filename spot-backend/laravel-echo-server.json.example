@@ -1,0 +1,26 @@
+{
+	"authHost": "http://exchange-api.sotatek.works",
+	"authEndpoint": "/broadcasting/auth",
+	"clients": [
+		{
+			"appId": "9cc499882e695daa",
+			"key": "ea6fe875a7dbf5931e203dfdea97a5a6"
+		}
+	],
+	"database": "redis",
+	"databaseConfig": {
+		"redis": {},
+		"sqlite": {
+			"databasePath": "/database/laravel-echo-server.sqlite"
+		}
+	},
+	"devMode": false,
+	"host": null,
+	"port": "6001",
+	"protocol": "http",
+	"socketio": {},
+	"sslCertPath": "",
+	"sslKeyPath": "",
+	"sslCertChainPath": "",
+	"sslPassphrase": ""
+}

@@ -1,0 +1,1 @@
+php artisan spot:delete_bots_filled_orders

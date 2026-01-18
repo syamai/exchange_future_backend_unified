@@ -1,0 +1,5 @@
+{
+  "name": "AUTO_DELEVERAGE",
+  "script": "php",
+  "args": "artisan margin:deleverage"
+}

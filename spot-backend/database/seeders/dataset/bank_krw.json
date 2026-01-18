@@ -1,0 +1,194 @@
+{
+  "1": {
+    "bankName": "카카오뱅크",
+    "bankCode": "090"
+  },
+  "2": {
+    "bankName": "국민은행",
+    "bankCode": "004"
+  },
+  "3": {
+    "bankName": "기업은행",
+    "bankCode": "003"
+  },
+  "4": {
+    "bankName": "농협은행",
+    "bankCode": "011"
+  },
+  "5": {
+    "bankName": "신한은행",
+    "bankCode": "088"
+  },
+  "6": {
+    "bankName": "산업은행",
+    "bankCode": "002"
+  },
+  "7": {
+    "bankName": "우리은행",
+    "bankCode": "020"
+  },
+  "8": {
+    "bankName": "한국씨티은행",
+    "bankCode": "027"
+  },
+  "9": {
+    "bankName": "하나은행",
+    "bankCode": "081"
+  },
+  "10": {
+    "bankName": "SC제일은행",
+    "bankCode": "023"
+  },
+  "11": {
+    "bankName": "경남은행",
+    "bankCode": "039"
+  },
+  "12": {
+    "bankName": "광주은행",
+    "bankCode": "034"
+  },
+  "13": {
+    "bankName": "대구은행",
+    "bankCode": "031"
+  },
+  "14": {
+    "bankName": "도이치은행",
+    "bankCode": "055"
+  },
+  "15": {
+    "bankName": "뱅크오브아메리카",
+    "bankCode": "060"
+  },
+  "16": {
+    "bankName": "부산은행",
+    "bankCode": "032"
+  },
+  "17": {
+    "bankName": "산림조합중앙회",
+    "bankCode": "064"
+  },
+  "18": {
+    "bankName": "저축은행",
+    "bankCode": "103"
+  },
+  "19": {
+    "bankName": "새마을금고",
+    "bankCode": "045"
+  },
+  "20": {
+    "bankName": "수협은행",
+    "bankCode": "007"
+  },
+  "21": {
+    "bankName": "신협중앙회",
+    "bankCode": "048"
+  },
+  "22": {
+    "bankName": "우체국",
+    "bankCode": "071"
+  },
+  "23": {
+    "bankName": "전북은행",
+    "bankCode": "037"
+  },
+  "24": {
+    "bankName": "제주은행",
+    "bankCode": "035"
+  },
+  "25": {
+    "bankName": "중국공상은행",
+    "bankCode": "062"
+  },
+  "26": {
+    "bankName": "HSBC은행",
+    "bankCode": "054"
+  },
+  "27": {
+    "bankName": "IP모간체이스은행",
+    "bankCode": "057"
+  },
+  "28": {
+    "bankName": "케이뱅크",
+    "bankCode": "089"
+  },
+  "29": {
+    "bankName": "토스뱅크",
+    "bankCode": "092"
+  },
+  "30": {
+    "bankName": "교보증권",
+    "bankCode": "261"
+  },
+  "31": {
+    "bankName": "대신증권",
+    "bankCode": "267"
+  },
+  "32": {
+    "bankName": "메리츠증권",
+    "bankCode": "287"
+  },
+  "33": {
+    "bankName": "미래에셋증권",
+    "bankCode": "238"
+  },
+  "34": {
+    "bankName": "부국증권",
+    "bankCode": "290"
+  },
+  "35": {
+    "bankName": "삼성증권",
+    "bankCode": "240"
+  },
+  "36": {
+    "bankName": "신한금융투자",
+    "bankCode": "278"
+  },
+  "37": {
+    "bankName": "에스케이증권",
+    "bankCode": "266"
+  },
+  "38": {
+    "bankName": "현대차증권",
+    "bankCode": "263"
+  },
+  "39": {
+    "bankName": "이베스트투자증권",
+    "bankCode": "265"
+  },
+  "40": {
+    "bankName": "케이프투자증권",
+    "bankCode": "292"
+  },
+  "41": {
+    "bankName": "키움증권",
+    "bankCode": "264"
+  },
+  "42": {
+    "bankName": "하나금융투자",
+    "bankCode": "270"
+  },
+  "43": {
+    "bankName": "하이투자증권",
+    "bankCode": "262"
+  },
+  "44": {
+    "bankName": "한국투자증권",
+    "bankCode": "243"
+  },
+  "45": {
+    "bankName": "한화투자증권",
+    "bankCode": "269"
+  },
+  "46": {
+    "bankName": "KB증권",
+    "bankCode": "218"
+  },
+  "47": {
+    "bankName": "NH투자증권",
+    "bankCode": "247"
+  },
+  "48": {
+    "bankName": "토스증권",
+    "bankCode": "271"
+  }
+}

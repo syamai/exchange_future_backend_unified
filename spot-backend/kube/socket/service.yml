@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: exchange-socket
+  namespace: exchange-stg
+  labels:
+    name: exchange-socket
+spec:
+  selector:
+    app: exchange-socket
+  type: LoadBalancer
+  ports:
+    - port: 6001
+      name: http
+      targetPort: 6001

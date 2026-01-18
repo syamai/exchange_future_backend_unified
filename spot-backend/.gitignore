@@ -1,0 +1,18 @@
+vendor/
+node_modules/
+public/
+storage/
+!storage/api-docs/api-docs.json
+
+.env
+.env.example
+package-lock.json
+composer.lock
+app/helpers.php
+
+launch.json
+
+# Credentials and secrets
+credentials/
+*.pem
+*.key

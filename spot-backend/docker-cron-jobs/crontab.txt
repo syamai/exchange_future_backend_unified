@@ -1,0 +1,20 @@
+# Users overview: gains
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan spot:user-holdings >> /logs/cron-$(date +\%F).log 2>&1'
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan spot:snapshot_assets >> /logs/cron-$(date +\%F).log 2>&1'
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan overview:top-gains >> /logs/cron-$(date +\%F).log 2>&1'
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan overview:top-loses >> /logs/cron-$(date +\%F).log 2>&1'
+0 3 * * * sh -c 'cd /app && /usr/local/bin/php artisan cleanup:user_asset_snapshots >> /logs/cron-$(date +\%F).log 2>&1'
+
+# Player Real Balance Report
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan spot:user-pendings >> /logs/cron-$(date +\%F).log 2>&1'
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan spot:user-transaction >> /logs/cron-$(date +\%F).log 2>&1'
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan spot:commission-rates >> /logs/cron-$(date +\%F).log 2>&1'
+* * * * * sh -c 'cd /app && /usr/local/bin/php artisan report:player-realbalance >> /logs/cron-$(date +\%F).log 2>&1'
+
+# Recalculate referral client
+0 * * * * sh -c 'cd /app && /usr/local/bin/php artisan affiliate:direct >> /logs/cron-$(date +\%F).log 2>&1'
+30 0 * * * sh -c 'cd /app && /usr/local/bin/php artisan affiliate:partner >> /logs/cron-$(date +\%F).log 2>&1'
+0 * * * * sh -c 'cd /app && /usr/local/bin/php artisan referral:client >> /logs/cron-$(date +\%F).log 2>&1'
+10 0 1 * * sh -c 'cd /app && /usr/local/bin/php artisan referral:set-level >> /logs/cron-$(date +\%F).log 2>&1'
+15 0 * * * sh -c 'cd /app && /usr/local/bin/php artisan referral:client-report-daily >> /logs/cron-$(date +\%F).log 2>&1'
+0 2 * * 1 sh -c 'cd /app && /usr/local/bin/php artisan referral:ranking-weekly >> /logs/cron-$(date +\%F).log 2>&1'

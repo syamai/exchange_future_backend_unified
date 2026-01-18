@@ -1,0 +1,5 @@
+{
+  "name": "MAM CLOSING",
+  "script": "php",
+  "args": "artisan mam:closing"
+}

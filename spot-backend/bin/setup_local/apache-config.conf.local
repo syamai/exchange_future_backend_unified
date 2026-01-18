@@ -1,0 +1,15 @@
+<VirtualHost *:80>
+  ServerAdmin amanpuri.io
+  DocumentRoot /var/www/amanpuri-api/public
+
+  <Directory /var/www/amanpuri-api/public>
+      Options Indexes FollowSymLinks MultiViews
+      AllowOverride All
+      Order deny,allow
+      Allow from all
+  </Directory>
+
+  ErrorLog /var/www/amanpuri-api/storage/logs/error.log
+  CustomLog /var/www/amanpuri-api/storage/logs/requests.log combined
+
+</VirtualHost>

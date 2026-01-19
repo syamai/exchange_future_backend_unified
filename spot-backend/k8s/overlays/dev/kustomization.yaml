@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: spot-backend-dev
+
+resources:
+  - ../../base
+
+nameSuffix: -dev
+
+# Reduce replicas for dev environment
+replicas:
+  - name: spot-backend-api
+    count: 1
+  - name: spot-backend-worker
+    count: 2
+  - name: spot-matching-engine
+    count: 1
+
+# Override images with ECR registry
+images:
+  - name: exchange/spot-backend
+    newName: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/spot-backend
+    newTag: latest
+
+# Patch resources for dev (smaller)
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: spot-backend-api
+      spec:
+        template:
+          spec:
+            containers:
+              - name: spot-backend
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "512Mi"
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: spot-backend-worker
+      spec:
+        template:
+          spec:
+            containers:
+              - name: spot-worker
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "128Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "512Mi"
+
+# ConfigMap patches
+configMapGenerator:
+  - name: spot-backend-config
+    behavior: merge
+    literals:
+      - APP_ENV=development
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+
+generatorOptions:
+  disableNameSuffixHash: true

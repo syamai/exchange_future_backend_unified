@@ -24,28 +24,28 @@ data:
 
     _master:
       type: "mysql"
-      host: "host.docker.internal"
+      host: "exchange-dev-mysql.clhjvle5bfjb.ap-northeast-2.rds.amazonaws.com"
       port: 3306
-      username: "root"
-      password: "rootpassword"
+      username: "admin"
+      password: "zo1zhPmD42rQKZ7j"
       database: "future_exchange"
       logging: false
 
     report:
       type: "mysql"
-      host: "host.docker.internal"
+      host: "exchange-dev-mysql.clhjvle5bfjb.ap-northeast-2.rds.amazonaws.com"
       port: 3306
-      username: "root"
-      password: "rootpassword"
+      username: "admin"
+      password: "zo1zhPmD42rQKZ7j"
       database: "future_exchange"
       logging: false
 
     redis:
-      host: "host.docker.internal"
+      host: "exchange-dev-redis.wt6mpg.0001.apn2.cache.amazonaws.com"
       port: 6379
 
     kafka:
-      brokers: "host.docker.internal:19092"
+      brokers: "10.0.2.51:9092"
 
     mail:
       enable: "false"

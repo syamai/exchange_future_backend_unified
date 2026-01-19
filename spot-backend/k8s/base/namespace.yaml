@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spot-backend
+  labels:
+    app.kubernetes.io/name: spot-backend
+    app.kubernetes.io/part-of: exchange

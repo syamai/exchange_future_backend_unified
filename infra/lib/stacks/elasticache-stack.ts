@@ -33,6 +33,13 @@ export class ElasticacheStack extends cdk.Stack {
       'Redis from EKS'
     );
 
+    // Allow Redis access from VPC (for EKS node groups that use different SGs)
+    redisSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(vpc.vpcCidrBlock),
+      ec2.Port.tcp(6379),
+      'Redis from VPC'
+    );
+
     // Subnet Group
     const subnetGroup = new elasticache.CfnSubnetGroup(this, 'SubnetGroup', {
       description: 'Subnet group for ElastiCache Redis',

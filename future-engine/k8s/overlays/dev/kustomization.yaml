@@ -13,10 +13,11 @@ labels:
       environment: development
     includeSelectors: false
 
-# Local Docker image (1.0.0 tag)
+# ECR Docker image
 images:
   - name: exchange/matching-engine-shard
-    newTag: "1.0.0"
+    newName: 233244340438.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/matching-engine-shard
+    newTag: "v1.0.0"
 
 # Patches for Docker Desktop environment
 patches:
@@ -56,11 +57,11 @@ patches:
     target:
       kind: StatefulSet
 
-  # Use IfNotPresent for local images
+  # Use Always for ECR images
   - patch: |
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
-        value: IfNotPresent
+        value: Always
     target:
       kind: StatefulSet
 
@@ -98,11 +99,11 @@ patches:
       kind: ConfigMap
       name: matching-engine-config
 
-  # Update Secret with local Kafka address
+  # Update Secret with AWS Kafka address
   - patch: |
       - op: replace
         path: /stringData/KAFKA_BOOTSTRAP_SERVERS
-        value: "host.docker.internal:19092"
+        value: "10.0.2.51:9092"
     target:
       kind: Secret
       name: matching-engine-secrets

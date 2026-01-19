@@ -10,6 +10,7 @@ export interface EcrStackProps extends cdk.StackProps {
 export class EcrStack extends cdk.Stack {
   public readonly matchingEngineRepo: ecr.Repository;
   public readonly backendRepo: ecr.Repository;
+  public readonly spotBackendRepo: ecr.Repository;
 
   constructor(scope: Construct, id: string, props: EcrStackProps) {
     super(scope, id, props);
@@ -34,9 +35,26 @@ export class EcrStack extends cdk.Stack {
       ],
     });
 
-    // Backend Repository
+    // Backend Repository (Future)
     this.backendRepo = new ecr.Repository(this, 'BackendRepo', {
       repositoryName: 'exchange/future-backend',
+      imageScanOnPush: true,
+      imageTagMutability: ecr.TagMutability.MUTABLE,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      emptyOnDelete: true,
+
+      lifecycleRules: [
+        {
+          description: 'Keep last 10 images',
+          maxImageCount: 10,
+          rulePriority: 1,
+        },
+      ],
+    });
+
+    // Spot Backend Repository (PHP/Laravel)
+    this.spotBackendRepo = new ecr.Repository(this, 'SpotBackendRepo', {
+      repositoryName: 'exchange/spot-backend',
       imageScanOnPush: true,
       imageTagMutability: ecr.TagMutability.MUTABLE,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -70,6 +88,16 @@ export class EcrStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'BackendRepoName', {
       value: this.backendRepo.repositoryName,
       exportName: `${config.envName}-BackendRepoName`,
+    });
+
+    new cdk.CfnOutput(this, 'SpotBackendRepoUri', {
+      value: this.spotBackendRepo.repositoryUri,
+      exportName: `${config.envName}-SpotBackendRepoUri`,
+    });
+
+    new cdk.CfnOutput(this, 'SpotBackendRepoName', {
+      value: this.spotBackendRepo.repositoryName,
+      exportName: `${config.envName}-SpotBackendRepoName`,
     });
 
     new cdk.CfnOutput(this, 'EcrLoginCommand', {

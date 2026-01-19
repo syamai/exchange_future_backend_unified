@@ -13,6 +13,13 @@ export interface EnvironmentConfig {
   readonly redisNodeType: string;
   readonly kafkaInstanceType: string;
   readonly dbUsername: string;
+
+  // Spot Backend settings
+  readonly spotBackend: {
+    readonly enabled: boolean;
+    readonly dbName: string;
+    readonly redisDb: number;
+  };
 }
 
 export const devConfig: EnvironmentConfig = {
@@ -28,8 +35,8 @@ export const devConfig: EnvironmentConfig = {
   eksNodeMaxSize: 6,
 
   // RDS - Upgraded for 2000 TPS
-  // db.t3.medium: ~500-1000 TPS, db.t3.large: ~2000-3000 TPS
-  rdsInstanceClass: 'db.t3.large',
+  // t3.medium: ~500-1000 TPS, t3.large: ~2000-3000 TPS
+  rdsInstanceClass: 't3.large',
 
   // Redis - Upgraded for 2000 TPS
   // cache.t3.medium: ~20,000 ops/sec
@@ -41,4 +48,13 @@ export const devConfig: EnvironmentConfig = {
 
   // Database
   dbUsername: 'admin',
+
+  // Spot Backend configuration
+  // Shares VPC, EKS, Redis with Future Backend
+  // Uses separate database and Redis DB index
+  spotBackend: {
+    enabled: true,
+    dbName: 'spot_exchange',  // Separate database for spot trading
+    redisDb: 2,               // Redis DB index (future uses 0-1)
+  },
 };

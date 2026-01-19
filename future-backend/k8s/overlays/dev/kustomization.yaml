@@ -13,10 +13,11 @@ labels:
       environment: development
     includeSelectors: false
 
-# Local Docker image
+# ECR image
 images:
   - name: exchange/future-backend
-    newTag: "1.0.0"
+    newName: 233244340438.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/future-backend
+    newTag: "v1.0.0"
 
 # Patch ConfigMap with dev local.yml
 patchesStrategicMerge:
@@ -57,17 +58,17 @@ patches:
     target:
       kind: Deployment
 
-  # Update Secret with local connection strings (Docker Desktop)
+  # Update Secret with AWS RDS connection strings
   - patch: |
       - op: replace
         path: /stringData/MYSQL_HOST
-        value: "host.docker.internal"
+        value: "exchange-dev-mysql.clhjvle5bfjb.ap-northeast-2.rds.amazonaws.com"
       - op: replace
         path: /stringData/MYSQL_USERNAME
-        value: "casino"
+        value: "admin"
       - op: replace
         path: /stringData/MYSQL_PASSWORD
-        value: "casinopassword"
+        value: "zo1zhPmD42rQKZ7j"
     target:
       kind: Secret
       name: future-backend-secrets

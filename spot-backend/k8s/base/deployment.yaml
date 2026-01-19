@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-backend-api
+  namespace: spot-backend
+  labels:
+    app: spot-backend
+    component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: api
+    spec:
+      containers:
+        - name: spot-backend
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-backend-worker
+  namespace: spot-backend
+  labels:
+    app: spot-backend
+    component: worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: worker
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: worker
+    spec:
+      containers:
+        - name: spot-worker
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--max-time=3600"]
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-matching-engine
+  namespace: spot-backend
+  labels:
+    app: spot-backend
+    component: matching-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: matching-engine
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: matching-engine
+    spec:
+      containers:
+        - name: matching-engine
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          # Use Swoole matching engine for high performance
+          command: ["php", "artisan", "matching-engine:swoole", "usdt", "btc", "--workers=4"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+          env:
+            - name: USE_SWOOLE_MATCHING_ENGINE
+              value: "true"
+      terminationGracePeriodSeconds: 30

@@ -45,12 +45,47 @@ export class VpcStack extends cdk.Stack {
     });
 
     // Security Group for EKS cluster
+    // Note: Pre-define rules that EKS auto-adds to prevent drift
     this.eksSecurityGroup = new ec2.SecurityGroup(this, 'EksSecurityGroup', {
       vpc: this.vpc,
       securityGroupName: `exchange-${config.envName}-eks-sg`,
       description: 'Security group for EKS cluster',
       allowAllOutbound: true,
     });
+
+    // Self-referencing rules for node-to-node and node-to-control-plane communication
+    // These rules prevent drift caused by EKS auto-generated rules
+    this.eksSecurityGroup.addIngressRule(
+      this.eksSecurityGroup,
+      ec2.Port.allTraffic(),
+      'Allow all traffic within EKS cluster (nodes and control plane)'
+    );
+
+    // Allow HTTPS from VPC for Kubernetes API access
+    this.eksSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(config.vpcCidr),
+      ec2.Port.tcp(443),
+      'Kubernetes API from VPC'
+    );
+
+    // Allow kubelet and metrics from VPC
+    this.eksSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(config.vpcCidr),
+      ec2.Port.tcp(10250),
+      'Kubelet API from VPC'
+    );
+
+    // Allow CoreDNS
+    this.eksSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(config.vpcCidr),
+      ec2.Port.tcp(53),
+      'CoreDNS TCP from VPC'
+    );
+    this.eksSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(config.vpcCidr),
+      ec2.Port.udp(53),
+      'CoreDNS UDP from VPC'
+    );
 
     // Add tags for EKS subnet auto-discovery
     cdk.Tags.of(this.vpc).add('Environment', config.envName);

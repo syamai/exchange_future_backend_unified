@@ -7,6 +7,7 @@ import { RdsStack } from '../lib/stacks/rds-stack';
 import { ElasticacheStack } from '../lib/stacks/elasticache-stack';
 import { KafkaStack } from '../lib/stacks/kafka-stack';
 import { EcrStack } from '../lib/stacks/ecr-stack';
+import { EksSchedulerStack } from '../lib/stacks/eks-scheduler-stack';
 import { devConfig, EnvironmentConfig } from '../config/dev';
 
 const app = new cdk.App();
@@ -92,6 +93,13 @@ const eksStack = new EksStack(app, `Exchange-${config.envName}-Eks`, {
   description: `EKS cluster for Exchange ${config.envName} environment`,
 });
 
+// EKS Scheduler Stack (Node auto-scaling for cost optimization)
+const eksSchedulerStack = new EksSchedulerStack(app, `Exchange-${config.envName}-EksScheduler`, {
+  ...envProps,
+  config,
+  description: `EKS node scheduler for Exchange ${config.envName} environment`,
+});
+
 // ============================================================================
 // Stack Dependencies
 // ============================================================================
@@ -101,6 +109,9 @@ rdsStack.addDependency(vpcStack);
 elasticacheStack.addDependency(vpcStack);
 kafkaStack.addDependency(vpcStack);
 eksStack.addDependency(vpcStack);
+
+// Scheduler depends on EKS (needs cluster and nodegroup to exist)
+eksSchedulerStack.addDependency(eksStack);
 
 // ============================================================================
 // Tags

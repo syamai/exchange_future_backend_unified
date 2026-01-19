@@ -49,6 +49,12 @@ export class EksStack extends cdk.Stack {
       ],
     });
 
+    // Add IAM user to cluster admin
+    this.cluster.awsAuth.addUserMapping(
+      iam.User.fromUserName(this, 'AdminUser', 'Alex'),
+      { groups: ['system:masters'] }
+    );
+
     // Spot instance Node Group (cost optimization)
     this.cluster.addNodegroupCapacity('SpotNodeGroup', {
       nodegroupName: `exchange-${config.envName}-spot-nodes`,

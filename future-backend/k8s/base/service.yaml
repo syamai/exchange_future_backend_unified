@@ -32,3 +32,27 @@ spec:
       nodePort: 30300
       protocol: TCP
       name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: future-backend-lb
+  namespace: future-backend
+  labels:
+    app: future-backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  type: LoadBalancer
+  selector:
+    app: future-backend
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: websocket

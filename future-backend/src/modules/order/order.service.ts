@@ -968,8 +968,11 @@ export class OrderService extends BaseEngineService {
     createOrderDto: CreateOrderDto, userId: number, isTesting?: boolean
   }): Promise<OrderEntity> {
     const { createOrderDto, userId } = data;
-    const checkStatusEnableCreateOrder = await this.cacheManager.get<boolean>(ENABLE_CREATE_ORDER);
-    const isBot = await this.botInMemoryService.checkIsBotUserId(userId);
+    // Parallel fetch for performance optimization
+    const [checkStatusEnableCreateOrder, isBot] = await Promise.all([
+      this.cacheManager.get<boolean>(ENABLE_CREATE_ORDER),
+      this.botInMemoryService.checkIsBotUserId(userId)
+    ]);
     if (checkStatusEnableCreateOrder && isBot) {
       return;
     }

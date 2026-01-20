@@ -17,7 +17,7 @@ labels:
 images:
   - name: exchange/matching-engine-shard
     newName: 233244340438.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/matching-engine-shard
-    newTag: "v1.0.0"
+    newTag: "v1.0.1"
 
 # Patches for Docker Desktop environment
 patches:

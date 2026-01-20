@@ -19,8 +19,8 @@ const appPort = config.get<number>("app.port");
 const prefix = config.get<string>("app.prefix");
 import * as cluster from "cluster";
 import * as os from "os";
-// const numCPUs = os.cpus().length;
-const numCPUs = 1;
+// Enable cluster mode for high throughput - use all available CPU cores
+const numCPUs = os.cpus().length;
 
 if (cluster.isMaster) {
   console.log(`Master process ${process.pid} is running`);

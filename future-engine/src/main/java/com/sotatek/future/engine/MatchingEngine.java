@@ -43,7 +43,11 @@ import org.apache.commons.lang3.ObjectUtils;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MatchingEngine implements OnNewDataListener<Command>, OnOrderTriggeredListener {
-  private static final MatchingEngine instance = new MatchingEngine();
+  private static MatchingEngine instance = new MatchingEngine();
+
+  public static void setInstance(MatchingEngine engine) {
+    instance = engine;
+  }
   public static final Map<String, Matcher> matchers = new HashMap<>();
   public static final Map<String, Trigger> triggers = new HashMap<>();
   public static final BlockingQueue<Command> commands = new LinkedBlockingQueue<>();

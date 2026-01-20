@@ -51,6 +51,9 @@ public class ShardedMatchingEngine extends MatchingEngine {
         this.lastProcessedTime = System.currentTimeMillis();
         this.commandsProcessed = 0;
 
+        // Set this instance as the singleton so ServiceFactory uses this engine
+        MatchingEngine.setInstance(this);
+
         // Initialize health status in constructor so it's always available
         this.healthStatus = ShardHealthStatus.builder()
                 .shardId(shardId)

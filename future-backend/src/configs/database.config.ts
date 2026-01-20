@@ -21,6 +21,14 @@ export const masterConfig = {
   synchronize: false,
   // Use mysql2 driver for MySQL 8 compatibility
   driver: require("mysql2"),
+  // Connection pool settings for high throughput
+  extra: {
+    connectionLimit: 50,
+    queueLimit: 0,
+    waitForConnections: true,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+  },
   // logging: true,
 } as TypeOrmModuleOptions;
 
@@ -33,5 +41,13 @@ export const reportConfig = {
   synchronize: false,
   // Use mysql2 driver for MySQL 8 compatibility
   driver: require("mysql2"),
+  // Connection pool settings for high throughput
+  extra: {
+    connectionLimit: 50,
+    queueLimit: 0,
+    waitForConnections: true,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+  },
   // logging: true,
 } as TypeOrmModuleOptions;

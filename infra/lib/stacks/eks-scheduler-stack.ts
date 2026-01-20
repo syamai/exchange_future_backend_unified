@@ -85,7 +85,7 @@ export class EksSchedulerStack extends cdk.Stack {
       ec2InstanceIds: [kafkaInstanceId],
     };
 
-    // Scale DOWN event payload (weekdays 22:00 KST = 13:00 UTC)
+    // Scale DOWN event payload (weekdays 21:00 KST = 12:00 UTC)
     const scaleDownPayload = {
       action: 'scale-down',
       // EKS
@@ -116,13 +116,13 @@ export class EksSchedulerStack extends cdk.Stack {
       ],
     });
 
-    // EventBridge rule: Scale DOWN at 22:00 KST (13:00 UTC) on weekdays
+    // EventBridge rule: Scale DOWN at 21:00 KST (12:00 UTC) on weekdays
     new events.Rule(this, 'ScaleDownRule', {
       ruleName: `exchange-${config.envName}-dev-scale-down`,
-      description: 'Stop dev environment at 22:00 KST on weekdays (EKS + RDS + Kafka)',
+      description: 'Stop dev environment at 21:00 KST on weekdays (EKS + RDS + Kafka)',
       schedule: events.Schedule.cron({
         minute: '0',
-        hour: '13', // 13:00 UTC = 22:00 KST
+        hour: '12', // 12:00 UTC = 21:00 KST
         weekDay: 'MON-FRI',
       }),
       targets: [
@@ -139,7 +139,7 @@ export class EksSchedulerStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'Schedule', {
-      value: 'Weekdays: 09:00 KST (start) / 22:00 KST (stop)',
+      value: 'Weekdays: 09:00 KST (start) / 21:00 KST (stop)',
       description: 'Schedule for dev environment',
     });
 

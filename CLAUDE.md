@@ -231,3 +231,83 @@ kubectl apply -k spot-backend/k8s/overlays/dev
 ### Namespaces
 - `future-backend-dev`: Futures trading services
 - `spot-backend-dev`: Spot trading services
+
+---
+
+## 2026-01-20 인프라 비용 최적화 작업 기록
+
+### 완료된 작업
+
+1. **스케줄러 시간 변경**
+   - 이전: 09:00-21:00 KST (12시간)
+   - 이후: 11:00-20:00 KST (9시간)
+   - 절감: ~$21/월
+
+2. **NAT Gateway → NAT Instance 교체**
+   - NAT Instance ID: `i-06d5bb3c9d01f720d`
+   - 절감: ~$37/월
+
+3. **ElastiCache Redis 삭제/재생성 추가**
+   - 매일 20:00 KST에 삭제, 11:00 KST에 재생성
+   - 절감: ~$33/월
+
+4. **스케줄러 관리 대상 리소스**
+   ```
+   EKS: exchange-dev (노드 스케일 업/다운)
+   RDS: exchange-dev-mysql (시작/중지)
+   Kafka: i-044548ca3fe3ae1a1 (시작/중지)
+   NAT: i-06d5bb3c9d01f720d (시작/중지)
+   Redis: exchange-dev-redis (삭제/재생성)
+   ```
+
+### 진행 중인 작업 (확인 필요)
+
+**RDS 다운그레이드**
+- 변경: `db.r6g.xlarge` → `db.t3.large`
+- 상태: `modifying` (진행 중이었음)
+- 예상 절감: ~$200/월
+
+확인 명령어:
+```bash
+aws rds describe-db-instances --db-instance-identifier exchange-dev-mysql \
+  --region ap-northeast-2 \
+  --query 'DBInstances[0].{Status:DBInstanceStatus,Class:DBInstanceClass}' \
+  --output table
+```
+
+완료 시 예상 결과:
+```
+| Status    | Class        |
+| available | db.t3.large  |
+```
+
+### 수동 시작/종료 명령어
+
+**전체 시작:**
+```bash
+aws lambda invoke --function-name exchange-dev-dev-scheduler \
+  --payload '{"action":"scale-up","clusterName":"exchange-dev","nodegroupName":"exchange-dev-spot-nodes","desiredSize":3,"minSize":2,"maxSize":6,"rdsInstanceId":"exchange-dev-mysql","ec2InstanceIds":["i-044548ca3fe3ae1a1","i-06d5bb3c9d01f720d"],"elasticache":{"clusterId":"exchange-dev-redis","nodeType":"cache.t3.medium","engine":"redis","engineVersion":"7.0","subnetGroupName":"exchange-dev-redis-subnet","securityGroupName":"exchange-dev-redis-sg"}}' \
+  --cli-binary-format raw-in-base64-out \
+  --region ap-northeast-2 /dev/stdout
+```
+
+**전체 종료:**
+```bash
+aws lambda invoke --function-name exchange-dev-dev-scheduler \
+  --payload '{"action":"scale-down","clusterName":"exchange-dev","nodegroupName":"exchange-dev-spot-nodes","desiredSize":0,"minSize":0,"maxSize":6,"rdsInstanceId":"exchange-dev-mysql","ec2InstanceIds":["i-044548ca3fe3ae1a1","i-06d5bb3c9d01f720d"],"elasticache":{"clusterId":"exchange-dev-redis","nodeType":"cache.t3.medium","engine":"redis","engineVersion":"7.0","subnetGroupName":"exchange-dev-redis-subnet","securityGroupName":"exchange-dev-redis-sg"}}' \
+  --cli-binary-format raw-in-base64-out \
+  --region ap-northeast-2 /dev/stdout
+```
+
+### 비용 요약
+
+| 항목 | 이전 | 이후 | 절감 |
+|------|------|------|------|
+| RDS (db.t3.large) | $248 | $75 | $173 |
+| NAT Instance | $45 | $3 | $42 |
+| Redis (9시간) | $50 | $13 | $37 |
+| EKS 노드 (9시간) | $90 | $23 | $67 |
+| Kafka (9시간) | $30 | $8 | $22 |
+| **예상 총 월 비용** | **~$472** | **~$150** | **~$322** |
+
+*참고: EKS Control Plane ($72), ELB ($20), Storage ($20) 등 고정 비용 별도*

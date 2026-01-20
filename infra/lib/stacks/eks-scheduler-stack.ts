@@ -10,19 +10,21 @@ import * as path from 'path';
 
 export interface EksSchedulerStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
+  natInstanceId: string;
 }
 
 export class EksSchedulerStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EksSchedulerStackProps) {
     super(scope, id, props);
 
-    const { config } = props;
+    const { config, natInstanceId } = props;
 
     // Resource identifiers
     const clusterName = `exchange-${config.envName}`;
     const nodegroupName = `exchange-${config.envName}-spot-nodes`;
     const rdsInstanceId = `exchange-${config.envName}-mysql`;
     const kafkaInstanceId = 'i-044548ca3fe3ae1a1'; // Kafka EC2 instance
+    // NAT Instance is passed from VPC stack
 
     // Lambda function for dev environment scheduling
     const schedulerFn = new NodejsFunction(this, 'SchedulerFunction', {
@@ -61,12 +63,15 @@ export class EksSchedulerStack extends cdk.Stack {
       })
     );
 
-    // IAM permissions for EC2 start/stop (Kafka) and security group lookup
+    // IAM permissions for EC2 start/stop (Kafka + NAT Instance) and security group lookup
     schedulerFn.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'EC2Permissions',
         actions: ['ec2:StartInstances', 'ec2:StopInstances', 'ec2:DescribeInstances'],
-        resources: [`arn:aws:ec2:${config.region}:${this.account}:instance/${kafkaInstanceId}`],
+        resources: [
+          `arn:aws:ec2:${config.region}:${this.account}:instance/${kafkaInstanceId}`,
+          `arn:aws:ec2:${config.region}:${this.account}:instance/*`, // NAT Instance (dynamic ID)
+        ],
       })
     );
 
@@ -112,7 +117,7 @@ export class EksSchedulerStack extends cdk.Stack {
       securityGroupName: `exchange-${config.envName}-redis-sg`,
     };
 
-    // Scale UP event payload (weekdays 09:00 KST = 00:00 UTC)
+    // Scale UP event payload (weekdays 11:00 KST = 02:00 UTC)
     const scaleUpPayload = {
       action: 'scale-up',
       // EKS
@@ -123,13 +128,13 @@ export class EksSchedulerStack extends cdk.Stack {
       maxSize: config.eksNodeMaxSize,
       // RDS
       rdsInstanceId,
-      // Kafka EC2
-      ec2InstanceIds: [kafkaInstanceId],
+      // EC2 (Kafka + NAT Instance)
+      ec2InstanceIds: [kafkaInstanceId, natInstanceId],
       // ElastiCache
       elasticache: elasticacheConfig,
     };
 
-    // Scale DOWN event payload (weekdays 21:00 KST = 12:00 UTC)
+    // Scale DOWN event payload (weekdays 20:00 KST = 11:00 UTC)
     const scaleDownPayload = {
       action: 'scale-down',
       // EKS
@@ -140,19 +145,19 @@ export class EksSchedulerStack extends cdk.Stack {
       maxSize: config.eksNodeMaxSize,
       // RDS
       rdsInstanceId,
-      // Kafka EC2
-      ec2InstanceIds: [kafkaInstanceId],
+      // EC2 (Kafka + NAT Instance)
+      ec2InstanceIds: [kafkaInstanceId, natInstanceId],
       // ElastiCache
       elasticache: elasticacheConfig,
     };
 
-    // EventBridge rule: Scale UP at 09:00 KST (00:00 UTC) on weekdays
+    // EventBridge rule: Scale UP at 11:00 KST (02:00 UTC) on weekdays
     new events.Rule(this, 'ScaleUpRule', {
       ruleName: `exchange-${config.envName}-dev-scale-up`,
-      description: 'Start dev environment at 09:00 KST on weekdays (EKS + RDS + Kafka + Redis)',
+      description: 'Start dev environment at 11:00 KST on weekdays (EKS + RDS + Kafka + Redis + NAT)',
       schedule: events.Schedule.cron({
         minute: '0',
-        hour: '0', // 00:00 UTC = 09:00 KST
+        hour: '2', // 02:00 UTC = 11:00 KST
         weekDay: 'MON-FRI',
       }),
       targets: [
@@ -162,13 +167,13 @@ export class EksSchedulerStack extends cdk.Stack {
       ],
     });
 
-    // EventBridge rule: Scale DOWN at 21:00 KST (12:00 UTC) on weekdays
+    // EventBridge rule: Scale DOWN at 20:00 KST (11:00 UTC) on weekdays
     new events.Rule(this, 'ScaleDownRule', {
       ruleName: `exchange-${config.envName}-dev-scale-down`,
-      description: 'Stop dev environment at 21:00 KST on weekdays (EKS + RDS + Kafka + Redis)',
+      description: 'Stop dev environment at 20:00 KST on weekdays (EKS + RDS + Kafka + Redis + NAT)',
       schedule: events.Schedule.cron({
         minute: '0',
-        hour: '12', // 12:00 UTC = 21:00 KST
+        hour: '11', // 11:00 UTC = 20:00 KST
         weekDay: 'MON-FRI',
       }),
       targets: [
@@ -185,12 +190,12 @@ export class EksSchedulerStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'Schedule', {
-      value: 'Weekdays: 09:00 KST (start) / 21:00 KST (stop)',
+      value: 'Weekdays: 11:00 KST (start) / 20:00 KST (stop)',
       description: 'Schedule for dev environment',
     });
 
     new cdk.CfnOutput(this, 'ManagedResources', {
-      value: `EKS: ${clusterName}, RDS: ${rdsInstanceId}, Kafka: ${kafkaInstanceId}, Redis: ${elasticacheConfig.clusterId}`,
+      value: `EKS: ${clusterName}, RDS: ${rdsInstanceId}, Kafka: ${kafkaInstanceId}, Redis: ${elasticacheConfig.clusterId}, NAT: ${natInstanceId}`,
       description: 'Resources managed by scheduler',
     });
 

@@ -97,6 +97,7 @@ const eksStack = new EksStack(app, `Exchange-${config.envName}-Eks`, {
 const eksSchedulerStack = new EksSchedulerStack(app, `Exchange-${config.envName}-EksScheduler`, {
   ...envProps,
   config,
+  natInstanceId: vpcStack.natInstance.instanceId,
   description: `EKS node scheduler for Exchange ${config.envName} environment`,
 });
 
@@ -112,6 +113,7 @@ eksStack.addDependency(vpcStack);
 
 // Scheduler depends on EKS (needs cluster and nodegroup to exist)
 eksSchedulerStack.addDependency(eksStack);
+eksSchedulerStack.addDependency(vpcStack);
 
 // ============================================================================
 // Tags

@@ -10,11 +10,18 @@ export interface VpcStackProps extends cdk.StackProps {
 export class VpcStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
   public readonly eksSecurityGroup: ec2.SecurityGroup;
+  public readonly natInstance: ec2.Instance;
 
   constructor(scope: Construct, id: string, props: VpcStackProps) {
     super(scope, id, props);
 
     const { config } = props;
+
+    // NAT Instance for cost optimization (~$8/month vs $45/month for NAT Gateway)
+    const natInstanceProvider = ec2.NatProvider.instanceV2({
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
+      defaultAllowedTraffic: ec2.NatTrafficDirection.OUTBOUND_ONLY,
+    });
 
     // VPC with 2 AZs, Public/Private/Isolated subnets
     this.vpc = new ec2.Vpc(this, 'Vpc', {
@@ -22,7 +29,8 @@ export class VpcStack extends cdk.Stack {
       ipAddresses: ec2.IpAddresses.cidr(config.vpcCidr),
       maxAzs: 2,
 
-      // Cost optimization: Single NAT Gateway
+      // Cost optimization: NAT Instance instead of NAT Gateway
+      natGatewayProvider: natInstanceProvider,
       natGateways: 1,
 
       subnetConfiguration: [
@@ -43,6 +51,9 @@ export class VpcStack extends cdk.Stack {
         },
       ],
     });
+
+    // Get the NAT Instance for scheduler management
+    this.natInstance = natInstanceProvider.gatewayInstances[0];
 
     // Security Group for EKS cluster
     // Note: Pre-define rules that EKS auto-adds to prevent drift
@@ -115,6 +126,12 @@ export class VpcStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'VpcCidr', {
       value: this.vpc.vpcCidrBlock,
       exportName: `${config.envName}-VpcCidr`,
+    });
+
+    new cdk.CfnOutput(this, 'NatInstanceId', {
+      value: this.natInstance.instanceId,
+      exportName: `${config.envName}-NatInstanceId`,
+      description: 'NAT Instance ID for scheduler management',
     });
   }
 }

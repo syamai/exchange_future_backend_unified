@@ -61,7 +61,7 @@ export class EksSchedulerStack extends cdk.Stack {
       })
     );
 
-    // IAM permissions for EC2 start/stop (Kafka)
+    // IAM permissions for EC2 start/stop (Kafka) and security group lookup
     schedulerFn.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'EC2Permissions',
@@ -69,6 +69,48 @@ export class EksSchedulerStack extends cdk.Stack {
         resources: [`arn:aws:ec2:${config.region}:${this.account}:instance/${kafkaInstanceId}`],
       })
     );
+
+    schedulerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'EC2DescribePermissions',
+        actions: ['ec2:DescribeSecurityGroups'],
+        resources: ['*'],
+      })
+    );
+
+    // IAM permissions for ElastiCache create/delete
+    schedulerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'ElastiCachePermissions',
+        actions: [
+          'elasticache:CreateCacheCluster',
+          'elasticache:DeleteCacheCluster',
+          'elasticache:DescribeCacheClusters',
+        ],
+        resources: [
+          `arn:aws:elasticache:${config.region}:${this.account}:cluster:exchange-${config.envName}-redis`,
+        ],
+      })
+    );
+
+    // ElastiCache subnet group permission (needed for creating cluster)
+    schedulerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'ElastiCacheSubnetPermissions',
+        actions: ['elasticache:DescribeCacheSubnetGroups'],
+        resources: ['*'],
+      })
+    );
+
+    // ElastiCache config
+    const elasticacheConfig = {
+      clusterId: `exchange-${config.envName}-redis`,
+      nodeType: config.redisNodeType,
+      engine: 'redis',
+      engineVersion: '7.0',
+      subnetGroupName: `exchange-${config.envName}-redis-subnet`,
+      securityGroupName: `exchange-${config.envName}-redis-sg`,
+    };
 
     // Scale UP event payload (weekdays 09:00 KST = 00:00 UTC)
     const scaleUpPayload = {
@@ -83,6 +125,8 @@ export class EksSchedulerStack extends cdk.Stack {
       rdsInstanceId,
       // Kafka EC2
       ec2InstanceIds: [kafkaInstanceId],
+      // ElastiCache
+      elasticache: elasticacheConfig,
     };
 
     // Scale DOWN event payload (weekdays 21:00 KST = 12:00 UTC)
@@ -98,12 +142,14 @@ export class EksSchedulerStack extends cdk.Stack {
       rdsInstanceId,
       // Kafka EC2
       ec2InstanceIds: [kafkaInstanceId],
+      // ElastiCache
+      elasticache: elasticacheConfig,
     };
 
     // EventBridge rule: Scale UP at 09:00 KST (00:00 UTC) on weekdays
     new events.Rule(this, 'ScaleUpRule', {
       ruleName: `exchange-${config.envName}-dev-scale-up`,
-      description: 'Start dev environment at 09:00 KST on weekdays (EKS + RDS + Kafka)',
+      description: 'Start dev environment at 09:00 KST on weekdays (EKS + RDS + Kafka + Redis)',
       schedule: events.Schedule.cron({
         minute: '0',
         hour: '0', // 00:00 UTC = 09:00 KST
@@ -119,7 +165,7 @@ export class EksSchedulerStack extends cdk.Stack {
     // EventBridge rule: Scale DOWN at 21:00 KST (12:00 UTC) on weekdays
     new events.Rule(this, 'ScaleDownRule', {
       ruleName: `exchange-${config.envName}-dev-scale-down`,
-      description: 'Stop dev environment at 21:00 KST on weekdays (EKS + RDS + Kafka)',
+      description: 'Stop dev environment at 21:00 KST on weekdays (EKS + RDS + Kafka + Redis)',
       schedule: events.Schedule.cron({
         minute: '0',
         hour: '12', // 12:00 UTC = 21:00 KST
@@ -144,7 +190,7 @@ export class EksSchedulerStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'ManagedResources', {
-      value: `EKS: ${clusterName}, RDS: ${rdsInstanceId}, Kafka: ${kafkaInstanceId}`,
+      value: `EKS: ${clusterName}, RDS: ${rdsInstanceId}, Kafka: ${kafkaInstanceId}, Redis: ${elasticacheConfig.clusterId}`,
       description: 'Resources managed by scheduler',
     });
 

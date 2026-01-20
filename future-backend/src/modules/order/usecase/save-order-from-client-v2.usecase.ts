@@ -261,14 +261,13 @@ export class SaveOrderFromClientV2UseCase {
     const { createOrderDto, userId, tmpOrderId } = command;
     if (createOrderDto == null || userId == null || tmpOrderId == null) return;
 
-    // this.logger.log(`tmpOrderId = ${tmpOrderId}`);
-    const account = await this.getAccountByUserIdAndAsset(
-      userId,
-      createOrderDto.asset
-    );
-    const instrument = await this.instrumentService.getCachedInstrument(
-      createOrderDto.symbol
-    );
+    // Parallel fetch for performance optimization
+    const [account, instrument] = await Promise.all([
+      this.getAccountByUserIdAndAsset(userId, createOrderDto.asset),
+      this.instrumentService.getCachedInstrument(createOrderDto.symbol)
+    ]);
+    if (!account || !instrument) return;
+
     const marginMode = await this.userMarginModeService.getCachedMarginMode(
       account.userId,
       instrument.id
@@ -298,67 +297,78 @@ export class SaveOrderFromClientV2UseCase {
       tmpId: tmpOrderId,
     };
 
-    // Handle for stop loss order
+    // Handle stop loss and take profit orders in parallel
+    const tpSlPromises: Promise<OrderEntity | null>[] = [];
+
     if (body.stopLoss) {
-      stopLossOrder = await this.orderRepoMaster.save({
-        ...body,
-        accountId: account.id,
-        userId: account.userId,
-        side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
-        tpSLPrice: body.stopLoss,
-        trigger: unsavedOrder.stopLossTrigger,
-        orderValue: "0",
-        tpSLType: TpSlType.STOP_MARKET,
-        stopLoss: null,
-        takeProfit: null,
-        price: null,
-        type: OrderType.MARKET,
-        asset: unsavedOrder.asset,
-        leverage: unsavedOrder.leverage,
-        marginMode: unsavedOrder.marginMode,
-        timeInForce: OrderTimeInForce.IOC,
-        isHidden: true,
-        stopCondition: unsavedOrder.stopLossCondition,
-        isReduceOnly: true,
-        isTpSlOrder: true,
-        contractType: unsavedOrder.contractType,
-        isPostOnly: false,
-        userEmail: account.userEmail,
-        originalCost: "0",
-        originalOrderMargin: "0",
-      });
+      tpSlPromises.push(
+        this.orderRepoMaster.save({
+          ...body,
+          accountId: account.id,
+          userId: account.userId,
+          side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
+          tpSLPrice: body.stopLoss,
+          trigger: unsavedOrder.stopLossTrigger,
+          orderValue: "0",
+          tpSLType: TpSlType.STOP_MARKET,
+          stopLoss: null,
+          takeProfit: null,
+          price: null,
+          type: OrderType.MARKET,
+          asset: unsavedOrder.asset,
+          leverage: unsavedOrder.leverage,
+          marginMode: unsavedOrder.marginMode,
+          timeInForce: OrderTimeInForce.IOC,
+          isHidden: true,
+          stopCondition: unsavedOrder.stopLossCondition,
+          isReduceOnly: true,
+          isTpSlOrder: true,
+          contractType: unsavedOrder.contractType,
+          isPostOnly: false,
+          userEmail: account.userEmail,
+          originalCost: "0",
+          originalOrderMargin: "0",
+        })
+      );
+    } else {
+      tpSlPromises.push(Promise.resolve(null));
     }
 
-    // Handle for take profit order
     if (body.takeProfit) {
-      takeProfitOrder = await this.orderRepoMaster.save({
-        ...body,
-        accountId: account.id,
-        userId: account.userId,
-        side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
-        tpSLPrice: body.takeProfit,
-        trigger: unsavedOrder.takeProfitTrigger,
-        orderValue: "0",
-        tpSLType: TpSlType.TAKE_PROFIT_MARKET,
-        stopLoss: null,
-        takeProfit: null,
-        price: null,
-        type: OrderType.MARKET,
-        asset: unsavedOrder.asset,
-        leverage: unsavedOrder.leverage,
-        marginMode: unsavedOrder.marginMode,
-        timeInForce: OrderTimeInForce.IOC,
-        isHidden: true,
-        stopCondition: unsavedOrder.takeProfitCondition,
-        isReduceOnly: true,
-        isTpSlOder: true,
-        contractType: unsavedOrder.contractType,
-        isPostOnly: false,
-        userEmail: account.userEmail,
-        originalCost: "0",
-        originalOrderMargin: "0",
-      });
+      tpSlPromises.push(
+        this.orderRepoMaster.save({
+          ...body,
+          accountId: account.id,
+          userId: account.userId,
+          side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
+          tpSLPrice: body.takeProfit,
+          trigger: unsavedOrder.takeProfitTrigger,
+          orderValue: "0",
+          tpSLType: TpSlType.TAKE_PROFIT_MARKET,
+          stopLoss: null,
+          takeProfit: null,
+          price: null,
+          type: OrderType.MARKET,
+          asset: unsavedOrder.asset,
+          leverage: unsavedOrder.leverage,
+          marginMode: unsavedOrder.marginMode,
+          timeInForce: OrderTimeInForce.IOC,
+          isHidden: true,
+          stopCondition: unsavedOrder.takeProfitCondition,
+          isReduceOnly: true,
+          isTpSlOder: true,
+          contractType: unsavedOrder.contractType,
+          isPostOnly: false,
+          userEmail: account.userEmail,
+          originalCost: "0",
+          originalOrderMargin: "0",
+        })
+      );
+    } else {
+      tpSlPromises.push(Promise.resolve(null));
     }
+
+    [stopLossOrder, takeProfitOrder] = await Promise.all(tpSlPromises);
 
     if (unsavedOrder.type === OrderType.MARKET) {
       // Check to pre-creating orders
@@ -459,6 +469,12 @@ export class SaveOrderFromClientV2UseCase {
         where: { userId, asset },
         select: ["id", "userId", "userEmail", "asset", "balance"],
       });
+      // Cache to Redis for future requests (TTL: 60 seconds)
+      if (account) {
+        await this.redisClient
+          .getInstance()
+          .setex(redisKeyWithAsset, 60, JSON.stringify(account));
+      }
     }
 
     if (!account) {
@@ -496,25 +512,29 @@ export class SaveOrderFromClientV2UseCase {
       order.remaining = new BigNumber(parseFloat(order.remaining)).toFixed();
     }
 
-    const isBot = await this.botInMemoryService.checkIsBotAccountId(account.id);
+    // Parallel fetch: isBot and tradingRule
+    const [isBot, tradingRule] = await Promise.all([
+      this.botInMemoryService.checkIsBotAccountId(account.id),
+      this.tradingRulesService.getTradingRuleByInstrumentId(order.symbol) as Promise<TradingRulesEntity>
+    ]);
+
     if (!isBot) {
       const userLeverage = marginMode
         ? Number(marginMode.leverage)
         : Number(DEFAULT_LEVERAGE);
 
-      const accountAvailableBalance = await this.balanceService.calAvailableBalance(
-        account.balance,
-        account.id,
-        USDT
-      );
+      // Parallel fetch: availableBalance and position
+      const [accountAvailableBalance, position] = await Promise.all([
+        this.balanceService.calAvailableBalance(account.balance, account.id, USDT),
+        this.positionRepoReport.findOne({
+          where: { accountId: account.id, symbol: instrument.symbol },
+          select: ["id", "currentQty", "marBuy", "marSel"],
+        })
+      ]);
 
       const availBalance = new BigNumber(
         accountAvailableBalance.availableBalance
       );
-      const position = await this.positionRepoReport.findOne({
-        where: { accountId: account.id, symbol: instrument.symbol },
-        select: ["id", "currentQty", "marBuy", "marSel"],
-      }); // TODO: get from cache
 
       // Validate quantity
       if (
@@ -572,10 +592,6 @@ export class SaveOrderFromClientV2UseCase {
     order.remaining = order.quantity;
     order.status = OrderStatus.PENDING;
     order.timeInForce = order.timeInForce || OrderTimeInForce.GTC;
-
-    const tradingRule = (await this.tradingRulesService.getTradingRuleByInstrumentId(
-      order.symbol
-    )) as TradingRulesEntity;
     const num = parseInt("1" + "0".repeat(+instrument.maxFiguresForSize));
 
     const minimumQty = new BigNumber(

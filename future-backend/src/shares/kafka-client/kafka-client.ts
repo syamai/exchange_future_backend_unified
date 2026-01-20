@@ -12,9 +12,31 @@ import { KafkaGroups } from "../enums/kafka.enum";
 @Injectable()
 export class KafkaClient {
   private producer: Producer;
+  private producerConnected = false;
+  private producerConnecting: Promise<void> | null = null;
 
   constructor() {
     this.producer = kafka.producer();
+  }
+
+  /**
+   * Ensures producer is connected (lazy connection with singleton pattern)
+   */
+  private async ensureProducerConnected(): Promise<void> {
+    if (this.producerConnected) return;
+
+    // Prevent multiple simultaneous connection attempts
+    if (this.producerConnecting) {
+      await this.producerConnecting;
+      return;
+    }
+
+    this.producerConnecting = this.producer.connect().then(() => {
+      this.producerConnected = true;
+      this.producerConnecting = null;
+    });
+
+    await this.producerConnecting;
   }
 
   /**
@@ -24,7 +46,7 @@ export class KafkaClient {
    * @returns
    */
   async send<T>(topic: string, data: T): Promise<RecordMetadata[]> {
-    await this.producer.connect();
+    await this.ensureProducerConnected();
     const result: RecordMetadata[] = await this.producer.send({
       topic: topic,
       messages: [
@@ -33,12 +55,11 @@ export class KafkaClient {
         },
       ],
     });
-    // await this.producer.disconnect();
     return result;
   }
 
   async sendPrice<T>(topic: string, data: T): Promise<RecordMetadata[]> {
-    await this.producer.connect();
+    await this.ensureProducerConnected();
     const result: RecordMetadata[] = await this.producer.send({
       topic: topic,
       messages: [
@@ -47,7 +68,6 @@ export class KafkaClient {
         },
       ],
     });
-
     return result;
   }
 
@@ -62,8 +82,9 @@ export class KafkaClient {
     topic: string,
     groupId: string,
     callback: (data: T) => Promise<void>,
-    options = {}
+    options: { partitionsConsumedConcurrently?: number; [key: string]: any } = {}
   ): Promise<Consumer> {
+    const { partitionsConsumedConcurrently = 10, ...subscribeOptions } = options;
     const consumer: Consumer = kafka.consumer({
       groupId: groupId,
     });
@@ -71,9 +92,10 @@ export class KafkaClient {
     await consumer.subscribe({
       topic: topic,
       fromBeginning: false,
-      ...options,
+      ...subscribeOptions,
     });
     await consumer.run({
+      partitionsConsumedConcurrently,
       eachMessage: async (payload: EachMessagePayload) => {
         await callback(JSON.parse(payload.message.value.toString()));
       },

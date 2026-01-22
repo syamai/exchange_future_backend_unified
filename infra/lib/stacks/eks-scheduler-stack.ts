@@ -27,12 +27,13 @@ export class EksSchedulerStack extends cdk.Stack {
     // NAT Instance is passed from VPC stack
 
     // Lambda function for dev environment scheduling
+    // Timeout 15 minutes: infra scale-up + wait for Kafka ready (max 7min) + init commands
     const schedulerFn = new NodejsFunction(this, 'SchedulerFunction', {
       functionName: `exchange-${config.envName}-dev-scheduler`,
       entry: path.join(__dirname, '../lambda/eks-scheduler/index.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_20_X,
-      timeout: cdk.Duration.minutes(5),
+      timeout: cdk.Duration.minutes(15),
       memorySize: 256,
       environment: {
         CLUSTER_NAME: clusterName,
@@ -42,11 +43,11 @@ export class EksSchedulerStack extends cdk.Stack {
       },
     });
 
-    // IAM permissions for EKS nodegroup scaling
+    // IAM permissions for EKS nodegroup scaling and cluster info
     schedulerFn.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'EKSPermissions',
-        actions: ['eks:UpdateNodegroupConfig', 'eks:DescribeNodegroup'],
+        actions: ['eks:UpdateNodegroupConfig', 'eks:DescribeNodegroup', 'eks:DescribeCluster'],
         resources: [
           `arn:aws:eks:${config.region}:${this.account}:nodegroup/${clusterName}/${nodegroupName}/*`,
           `arn:aws:eks:${config.region}:${this.account}:cluster/${clusterName}`,
@@ -107,6 +108,19 @@ export class EksSchedulerStack extends cdk.Stack {
       })
     );
 
+    // SSM permissions for matching engine initialization
+    schedulerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'SSMPermissions',
+        actions: ['ssm:SendCommand', 'ssm:GetCommandInvocation'],
+        resources: [
+          `arn:aws:ssm:${config.region}:${this.account}:document/AWS-RunShellScript`,
+          `arn:aws:ec2:${config.region}:${this.account}:instance/${kafkaInstanceId}`,
+          `arn:aws:ssm:${config.region}::document/AWS-RunShellScript`,
+        ],
+      })
+    );
+
     // ElastiCache config
     const elasticacheConfig = {
       clusterId: `exchange-${config.envName}-redis`,
@@ -116,6 +130,20 @@ export class EksSchedulerStack extends cdk.Stack {
       subnetGroupName: `exchange-${config.envName}-redis-subnet`,
       securityGroupName: `exchange-${config.envName}-redis-sg`,
     };
+
+    // Matching engine initialization config
+    const matchingEngineInitConfig = {
+      kafkaInstanceId,
+      preloadTopic: 'matching_engine_preload',
+      delaySeconds: 420, // Max 7 minutes to wait for Kafka to be ready (polls every 15s)
+    };
+
+    // Kubernetes deployments to scale (prevents Cluster Autoscaler from scaling back up)
+    const k8sDeploymentsConfig = [
+      { namespace: 'future-backend-dev', name: 'dev-future-backend', scaleUpReplicas: 2 },
+      { namespace: 'future-backend-dev', name: 'dev-order-worker', scaleUpReplicas: 1 },
+      { namespace: 'matching-engine-dev', name: 'dev-matching-engine-legacy', scaleUpReplicas: 1 },
+    ];
 
     // Scale UP event payload (weekdays 11:00 KST = 02:00 UTC)
     const scaleUpPayload = {
@@ -132,6 +160,10 @@ export class EksSchedulerStack extends cdk.Stack {
       ec2InstanceIds: [kafkaInstanceId, natInstanceId],
       // ElastiCache
       elasticache: elasticacheConfig,
+      // Matching Engine initialization (only for scale-up)
+      matchingEngineInit: matchingEngineInitConfig,
+      // K8s deployments to restore
+      k8sDeployments: k8sDeploymentsConfig,
     };
 
     // Scale DOWN event payload (weekdays 20:00 KST = 11:00 UTC)
@@ -149,12 +181,14 @@ export class EksSchedulerStack extends cdk.Stack {
       ec2InstanceIds: [kafkaInstanceId, natInstanceId],
       // ElastiCache
       elasticache: elasticacheConfig,
+      // K8s deployments to scale down FIRST (prevents Cluster Autoscaler from scaling back up)
+      k8sDeployments: k8sDeploymentsConfig,
     };
 
     // EventBridge rule: Scale UP at 11:00 KST (02:00 UTC) on weekdays
     new events.Rule(this, 'ScaleUpRule', {
       ruleName: `exchange-${config.envName}-dev-scale-up`,
-      description: 'Start dev environment at 11:00 KST on weekdays (EKS + RDS + Kafka + Redis + NAT)',
+      description: 'Start dev environment at 11:00 KST on weekdays (EKS + RDS + Kafka + Redis + NAT + Matching Engine Init)',
       schedule: events.Schedule.cron({
         minute: '0',
         hour: '2', // 02:00 UTC = 11:00 KST

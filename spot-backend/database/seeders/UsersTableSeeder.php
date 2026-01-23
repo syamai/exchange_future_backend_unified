@@ -87,8 +87,19 @@ class UsersTableSeeder extends Seeder
         try {
             $this->createSecuritySettings($userId);
             $this->createOrderBookSettings($userId);
+            $this->createAccountProfileSettings($userId);
         } catch (\Exception $exception) {
         }
+    }
+
+    private function createAccountProfileSettings($userId)
+    {
+        DB::table('account_profile_settings')->insertOrIgnore([
+            'user_id' => $userId,
+            'spot_trade_allow' => 1,
+            'created_at' => \Carbon\Carbon::now(),
+            'updated_at' => \Carbon\Carbon::now()
+        ]);
     }
 
     private function createUserAccounts($userId, $email)

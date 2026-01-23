@@ -18,6 +18,14 @@ class PrometheusServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // Skip Redis connection if Prometheus is disabled
+        if (!config('monitor.prometheus.enabled')) {
+            $this->app->singleton(CollectorRegistry::class, function(){
+                return new CollectorRegistry(new \Prometheus\Storage\InMemory());
+            });
+            return;
+        }
+
         $this->app->singleton(CollectorRegistry::class, function(){
             $redisConfig = config('database.redis.prometheus');
             $adapter = new Redis([
@@ -27,7 +35,7 @@ class PrometheusServiceProvider extends ServiceProvider
                 'database' => $redisConfig['database'],
                 'timeout' => 0.1,
                 'read_timeout' => 10,
-                'persistent_connections' => false, 
+                'persistent_connections' => false,
             ]);
             return new CollectorRegistry($adapter);
         });

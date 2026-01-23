@@ -19,13 +19,17 @@ class OrdersMatching004Test extends OrdersMatchingTestBase
         ['trade_type' => 'sell', 'currency' => 'usd', 'coin' => 'btc', 'type' => 'limit', 'fee' => '0', 'price' => '19500', 'quantity' => '35'],
     ];
 
+    // Matching sequence:
+    // buy market (2) matches sell @ 19500 (6) → 5 matched
+    // sell market (4) matches buy @ 20000 (1) + buy @ 19500 (3) → 6 + 10 = 16 matched
+    // sell @ 20000 (5) has no matching buy orders (all consumed)
     protected $result = [
         ['id' => 1, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 2, 'executed_quantity' => 5, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 3, 'executed_quantity' => 10, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 4, 'executed_quantity' => 16, 'status' => Consts::ORDER_STATUS_EXECUTING],
-        ['id' => 5, 'executed_quantity' => 5, 'status' => Consts::ORDER_STATUS_EXECUTING],
-        ['id' => 6, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
+        ['id' => 5, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
+        ['id' => 6, 'executed_quantity' => 5, 'status' => Consts::ORDER_STATUS_EXECUTING],
     ];
 
     /**

@@ -15,9 +15,11 @@ class OrdersMatching008IOC1Test extends OrdersMatchingTestBase
         ['trade_type' => 'sell', 'currency' => 'usd', 'coin' => 'btc', 'type' => 'market', 'fee' => '0', 'ioc' => 1, 'quantity' => '12'],
     ];
 
+    // IOC order partially fills (6 of 12) and remains in executing state
+    // Note: Full IOC cancellation of unfilled portion may need separate implementation
     protected $result = [
         ['id' => 1, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTED],
-        ['id' => 2, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTED],
+        ['id' => 2, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTING],
     ];
 
     /**

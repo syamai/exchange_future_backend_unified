@@ -29,12 +29,25 @@ class OrdersMatching006Test extends OrdersMatchingTestBase
      */
     public function testOrderMatching()
     {
-        $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[0]);
+        $response = $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[0]);
+        $data = $response->json();
+        if (isset($data['data']['id'])) {
+            $job = new \App\Jobs\ProcessOrderRequest($data['data']['id'], \App\Jobs\ProcessOrderRequest::CREATE);
+            $job->handle();
+        }
 
         $orderId = $this->getBaseId() + 1;
-        $this->actingAs($this->user1, 'api')->json('PUT', "/api/orders/$orderId/cancel");
+        $cancelResponse = $this->actingAs($this->user1, 'api')->json('PUT', "/api/orders/$orderId/cancel");
+        // Execute cancel job if needed
+        $cancelJob = new \App\Jobs\ProcessOrderRequest($orderId, \App\Jobs\ProcessOrderRequest::CANCEL);
+        $cancelJob->handle();
 
-        $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[1]);
+        $response2 = $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[1]);
+        $data2 = $response2->json();
+        if (isset($data2['data']['id'])) {
+            $job2 = new \App\Jobs\ProcessOrderRequest($data2['data']['id'], \App\Jobs\ProcessOrderRequest::CREATE);
+            $job2->handle();
+        }
 
         $this->checkResult();
     }

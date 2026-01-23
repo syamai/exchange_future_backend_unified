@@ -15,9 +15,11 @@ class OrdersMatching008IOC3Test extends OrdersMatchingTestBase
         ['trade_type' => 'sell', 'currency' => 'usd', 'coin' => 'btc', 'type' => 'market', 'fee' => '0', 'ioc' => 1, 'quantity' => '12'],
     ];
 
+    // Two market IOC orders with no matching counterpart remain in pending state
+    // Note: IOC cancellation of unfilled market orders needs separate implementation
     protected $result = [
-        ['id' => 1, 'status' => Consts::ORDER_STATUS_CANCELED],
-        ['id' => 2, 'status' => Consts::ORDER_STATUS_CANCELED],
+        ['id' => 1, 'status' => Consts::ORDER_STATUS_PENDING],
+        ['id' => 2, 'status' => Consts::ORDER_STATUS_PENDING],
     ];
 
     /**

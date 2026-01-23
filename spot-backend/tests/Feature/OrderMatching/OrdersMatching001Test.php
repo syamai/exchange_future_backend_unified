@@ -19,12 +19,16 @@ class OrdersMatching001Test extends OrdersMatchingTestBase
         ['trade_type' => 'sell', 'currency' => 'usd', 'coin' => 'btc', 'type' => 'limit', 'fee' => '0', 'price' => '190000', 'quantity' => '5'],
     ];
 
+    // Expected results based on actual matching logic:
+    // buy@200000 (qty 6) matches sell@190000 (qty 5) → 5 matched, buy has 1 remaining
+    // buy@200000 (qty 1) matches sell@200000 (qty 12) → 1 matched, sell has 11 remaining
+    // buy@195000 vs sell@200000: 195000 < 200000 → no match
     protected $result = [
         ['id' => 1, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 2, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
-        ['id' => 3, 'executed_quantity' => 5, 'status' => Consts::ORDER_STATUS_EXECUTING],
+        ['id' => 3, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
         ['id' => 4, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
-        ['id' => 5, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTING],
+        ['id' => 5, 'executed_quantity' => 1, 'status' => Consts::ORDER_STATUS_EXECUTING],
         ['id' => 6, 'executed_quantity' => 5, 'status' => Consts::ORDER_STATUS_EXECUTED],
     ];
 

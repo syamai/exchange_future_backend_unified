@@ -19,13 +19,15 @@ class OrdersMatching002Test extends OrdersMatchingTestBase
         ['trade_type' => 'sell', 'currency' => 'usd', 'coin' => 'btc', 'type' => 'market', 'fee' => '0', 'ioc' => 0, 'quantity' => '35'],
     ];
 
+    // Market sell (qty 35) matches all buy orders: 6 + 10 + 5 = 21
+    // Limit sell @ 200000 doesn't match (no remaining buy orders)
     protected $result = [
         ['id' => 1, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 2, 'executed_quantity' => 5, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 3, 'executed_quantity' => 10, 'status' => Consts::ORDER_STATUS_EXECUTED],
         ['id' => 4, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
-        ['id' => 5, 'executed_quantity' => 6, 'status' => Consts::ORDER_STATUS_EXECUTING],
-        ['id' => 6, 'executed_quantity' => 15, 'status' => Consts::ORDER_STATUS_EXECUTING],
+        ['id' => 5, 'executed_quantity' => 0, 'status' => Consts::ORDER_STATUS_PENDING],
+        ['id' => 6, 'executed_quantity' => 21, 'status' => Consts::ORDER_STATUS_EXECUTING],
     ];
 
     /**

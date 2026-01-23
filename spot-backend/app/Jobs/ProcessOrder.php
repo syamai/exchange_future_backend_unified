@@ -95,6 +95,15 @@ class ProcessOrder implements ShouldQueue
         $this->clearCache();
         $this->loadOrders();
 
+        // In testing mode, process all unprocessed orders first to add them to matching queue
+        // This is needed because the while loop only runs once in testing mode
+        if (Utils::isTesting()) {
+            while ($this->processNextUnprocessedOrder()) {
+                // Process all orders into matching queue
+            }
+            $this->lastMatchingSuccess = true;
+        }
+
         $this->lastRun = Utils::currentMilliseconds();
         while (true) {
             if ($this->lastRun + $this->checkingInterval - 500 < Utils::currentMilliseconds()) {
@@ -147,7 +156,11 @@ class ProcessOrder implements ShouldQueue
             }
 
             if (Utils::isTesting()) {
-                break;
+                // In testing, continue until no more matches
+                if ($batchMatchCount == 0) {
+                    break;
+                }
+                continue;
             }
 
             // Dynamic polling: adjust sleep time based on activity

@@ -29,10 +29,21 @@ class OrdersMatching007Test extends OrdersMatchingTestBase
      */
     public function testOrderMatching()
     {
-        $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[0]);
+        $response = $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[0]);
+        $data = $response->json();
+        if (isset($data['data']['id'])) {
+            $job = new \App\Jobs\ProcessOrderRequest($data['data']['id'], \App\Jobs\ProcessOrderRequest::CREATE);
+            $job->handle();
+        }
+
         $this->clearCache();
 
-        $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[1]);
+        $response2 = $this->actingAs($this->user1, 'api')->json('POST', '/api/orders', $this->initData[1]);
+        $data2 = $response2->json();
+        if (isset($data2['data']['id'])) {
+            $job2 = new \App\Jobs\ProcessOrderRequest($data2['data']['id'], \App\Jobs\ProcessOrderRequest::CREATE);
+            $job2->handle();
+        }
 
         $this->checkResult();
     }

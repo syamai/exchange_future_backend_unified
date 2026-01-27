@@ -13,11 +13,11 @@ labels:
       environment: development
     includeSelectors: false
 
-# ECR image
+# ECR image (critonex account)
 images:
   - name: exchange/future-backend
-    newName: 233244340438.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/future-backend
-    newTag: "v1.0.0"
+    newName: 990781424619.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/future-backend
+    newTag: "main"
 
 # Patch ConfigMap with dev local.yml
 patchesStrategicMerge:

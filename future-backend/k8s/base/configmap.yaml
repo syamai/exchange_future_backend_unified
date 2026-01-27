@@ -5,7 +5,7 @@ metadata:
   namespace: future-backend
 data:
   NODE_ENV: "development"
-  development.yml: |
+  local.yml: |
     app:
       name: "future-backend"
       prefix: "v1"

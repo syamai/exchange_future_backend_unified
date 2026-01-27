@@ -4,8 +4,8 @@ metadata:
   name: future-backend-config
   namespace: future-backend
 data:
-  NODE_ENV: "local"
-  local.yml: |
+  NODE_ENV: "development"
+  development.yml: |
     app:
       name: "future-backend"
       prefix: "v1"

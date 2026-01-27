@@ -19,7 +19,7 @@ resources:
   - shard-2-statefulset.yaml
   - shard-3-statefulset.yaml
   - pdb.yaml
-  - servicemonitor.yaml
+  # - servicemonitor.yaml  # Disabled: Prometheus CRD (PrometheusRule, ServiceMonitor) not installed
 
 images:
   - name: exchange/matching-engine-shard

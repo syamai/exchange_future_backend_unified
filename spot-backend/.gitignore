@@ -8,7 +8,6 @@ storage/
 .env.example
 package-lock.json
 composer.lock
-app/helpers.php
 
 launch.json
 

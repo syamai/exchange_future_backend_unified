@@ -147,8 +147,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+      always() && needs.build.result == 'success' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev'))
     environment: development
 
     steps:

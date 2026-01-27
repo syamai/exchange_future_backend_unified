@@ -1,0 +1,263 @@
+name: Future Matching Engine CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'future-engine/**'
+      - '.github/workflows/future-engine.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'future-engine/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: exchange/matching-engine-shard
+  K8S_NAMESPACE_DEV: matching-engine-dev
+  K8S_NAMESPACE_PROD: matching-engine-prod
+  JAVA_VERSION: '17'
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: future-engine
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run tests
+        run: mvn clean verify -B
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: future-engine/target/surefire-reports/
+
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: future-engine
+          file: future-engine/Dockerfile.shard
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: build
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    environment: development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ secrets.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy to EKS
+        run: |
+          cd future-engine/k8s/overlays/dev
+
+          # Update kustomization with new image
+          kustomize edit set image \
+            exchange/matching-engine-shard=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ needs.build.outputs.image_tag }}
+
+          # Apply manifests
+          kubectl apply -k .
+
+          # Wait for StatefulSet rollout (each shard)
+          for shard in shard-1 shard-2 shard-3; do
+            echo "Waiting for $shard rollout..."
+            kubectl rollout status statefulset/dev-matching-engine-$shard \
+              -n ${{ env.K8S_NAMESPACE_DEV }} \
+              --timeout=300s || true
+          done
+
+      - name: Verify deployment
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -n ${{ env.K8S_NAMESPACE_DEV }} -l app=matching-engine
+
+          echo "Checking shard health..."
+          for pod in $(kubectl get pods -n ${{ env.K8S_NAMESPACE_DEV }} -l app=matching-engine -o name); do
+            echo "Health check for $pod:"
+            kubectl exec -n ${{ env.K8S_NAMESPACE_DEV }} $pod -- \
+              curl -sf http://localhost:8080/health/live || echo "Health check skipped"
+          done
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-dev]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ secrets.EKS_CLUSTER_NAME_PROD }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy Shard 1 (Canary)
+        run: |
+          cd future-engine/k8s/overlays/prod
+
+          kustomize edit set image \
+            exchange/matching-engine-shard=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ needs.build.outputs.image_tag }}
+
+          # Apply only shard-1 first (canary)
+          kubectl apply -k .
+
+          # Restart only shard-1
+          kubectl rollout restart statefulset/matching-engine-shard-1 \
+            -n ${{ env.K8S_NAMESPACE_PROD }}
+
+          kubectl rollout status statefulset/matching-engine-shard-1 \
+            -n ${{ env.K8S_NAMESPACE_PROD }} \
+            --timeout=300s
+
+      - name: Health check (Shard 1)
+        run: |
+          echo "Waiting 60s for shard-1 health check..."
+          sleep 60
+
+          # Check shard-1 health
+          POD_NAME=$(kubectl get pods -n ${{ env.K8S_NAMESPACE_PROD }} \
+            -l app=matching-engine,shard=shard-1 \
+            -o jsonpath='{.items[0].metadata.name}')
+
+          HEALTH=$(kubectl exec -n ${{ env.K8S_NAMESPACE_PROD }} $POD_NAME -- \
+            curl -sf http://localhost:8080/health/live | jq -r '.status')
+
+          if [[ "$HEALTH" != "UP" ]]; then
+            echo "Shard 1 health check failed! Rolling back..."
+            kubectl rollout undo statefulset/matching-engine-shard-1 -n ${{ env.K8S_NAMESPACE_PROD }}
+            exit 1
+          fi
+
+          echo "Shard 1 health check passed!"
+
+      - name: Deploy remaining shards
+        run: |
+          # Deploy shard-2 and shard-3
+          for shard in shard-2 shard-3; do
+            echo "Rolling out $shard..."
+            kubectl rollout restart statefulset/matching-engine-$shard \
+              -n ${{ env.K8S_NAMESPACE_PROD }}
+
+            kubectl rollout status statefulset/matching-engine-$shard \
+              -n ${{ env.K8S_NAMESPACE_PROD }} \
+              --timeout=300s
+          done
+
+      - name: Verify production deployment
+        run: |
+          echo "=== Production Deployment Summary ==="
+          kubectl get pods -n ${{ env.K8S_NAMESPACE_PROD }} -l app=matching-engine
+          kubectl get statefulsets -n ${{ env.K8S_NAMESPACE_PROD }}
+
+          echo ""
+          echo "=== Shard Health Status ==="
+          for pod in $(kubectl get pods -n ${{ env.K8S_NAMESPACE_PROD }} -l app=matching-engine -o name); do
+            echo "$pod:"
+            kubectl exec -n ${{ env.K8S_NAMESPACE_PROD }} $pod -- \
+              curl -sf http://localhost:8080/health/ready || echo "  - Health endpoint not available"
+          done

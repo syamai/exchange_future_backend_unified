@@ -61,13 +61,13 @@ patches:
                     memory: "512Mi"
 
 # ConfigMap patches
-configMapGenerator:
-  - name: spot-backend-config
-    behavior: merge
-    literals:
-      - APP_ENV=development
-      - APP_DEBUG=true
-      - LOG_LEVEL=debug
-
-generatorOptions:
-  disableNameSuffixHash: true
+patchesStrategicMerge:
+  - |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: spot-backend-config
+    data:
+      APP_ENV: "development"
+      APP_DEBUG: "true"
+      LOG_LEVEL: "debug"

@@ -1,0 +1,67 @@
+# Test Configuration for Future Backend
+# Used when NODE_ENV=test (e.g., CI/CD pipeline)
+
+app:
+  name: "future-backend"
+  prefix: "v1"
+  node_env: "test"
+
+# Database Configuration (Master - Write)
+_master:
+  type: "mysql"
+  host: "127.0.0.1"
+  port: 3306
+  username: "root"
+  password: "root"
+  database: "future_backend_test"
+  logging: false
+
+# Database Configuration (Report - Read)
+report:
+  type: "mysql"
+  host: "127.0.0.1"
+  port: 3306
+  username: "root"
+  password: "root"
+  database: "future_backend_test"
+  logging: false
+
+# Redis Configuration
+redis:
+  host: "127.0.0.1"
+  port: 6379
+
+# Kafka Configuration
+kafka:
+  brokers: "localhost:9092"
+
+# Mail Configuration
+mail:
+  enable: "false"
+  service: "gmail"
+  domain: "smtp.gmail.com"
+  port: "465"
+  account: ""
+  password: ""
+  from_address: ""
+  from_name: "Future Exchange"
+
+# DEX Configuration
+dex:
+  block_confirm: 12
+
+# Sharding Configuration (disabled for tests)
+sharding:
+  enabled: false
+  shard1:
+    symbols: "BTCUSDT,BTCBUSD,BTCUSDC"
+    inputTopic: "matching-engine-shard-1-input"
+    outputTopic: "matching-engine-shard-1-output"
+  shard2:
+    symbols: "ETHUSDT,ETHBUSD,ETHUSDC"
+    inputTopic: "matching-engine-shard-2-input"
+    outputTopic: "matching-engine-shard-2-output"
+  shard3:
+    symbols: ""
+    inputTopic: "matching-engine-shard-3-input"
+    outputTopic: "matching-engine-shard-3-output"

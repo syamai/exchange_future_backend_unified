@@ -62,7 +62,8 @@ RUN composer dump-autoload --optimize
 RUN php artisan storage:link || true && \
     php artisan vendor:publish --provider "L5Swagger\L5SwaggerServiceProvider" || true
 
-RUN chown -R www-data:www-data /app/storage/api-docs
+# Create storage/api-docs directory if it doesn't exist and set permissions
+RUN mkdir -p /app/storage/api-docs && chown -R www-data:www-data /app/storage/api-docs
 
 RUN export RABBITMQ_PREFIX="exchange_"
 RUN echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-ram-limit.ini

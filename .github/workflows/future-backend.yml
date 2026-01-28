@@ -181,8 +181,8 @@ jobs:
           kustomize edit set image \
             exchange/future-backend=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ needs.build.outputs.image_tag }}
 
-          # Apply manifests
-          kubectl apply -k .
+          # Apply manifests (server-side apply handles existing resources)
+          kubectl apply -k . --server-side --force-conflicts
 
           # Wait for rollout
           kubectl rollout status deployment/dev-future-backend \

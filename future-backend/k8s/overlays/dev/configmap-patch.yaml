@@ -25,28 +25,28 @@ data:
 
     _master:
       type: "mysql"
-      host: "exchange-dev-mysql.clhjvle5bfjb.ap-northeast-2.rds.amazonaws.com"
+      host: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
       port: 3306
       username: "admin"
-      password: "zo1zhPmD42rQKZ7j"
+      password: "Passw0rd!"
       database: "future_exchange"
       logging: false
 
     report:
       type: "mysql"
-      host: "exchange-dev-mysql.clhjvle5bfjb.ap-northeast-2.rds.amazonaws.com"
+      host: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
       port: 3306
       username: "admin"
-      password: "zo1zhPmD42rQKZ7j"
+      password: "Passw0rd!"
       database: "future_exchange"
       logging: false
 
     redis:
-      host: "exchange-dev-redis.wt6mpg.0001.apn2.cache.amazonaws.com"
+      host: "exchange-cicd-dev-redis.pyibmf.0001.apn2.cache.amazonaws.com"
       port: 6379
 
     kafka:
-      brokers: "10.0.2.51:9092"
+      brokers: "localhost:9092"
 
     mail:
       enable: "false"

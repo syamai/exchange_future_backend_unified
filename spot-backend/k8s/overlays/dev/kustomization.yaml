@@ -82,5 +82,9 @@ patchesStrategicMerge:
       DB_HOST: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
       DB_USERNAME: "admin"
       DB_PASSWORD: "ExchangeDevPass2026"
+      # Read replica uses same host in dev (no separate replica)
+      SLAVE_DB_HOST: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
+      SLAVE_DB_USERNAME: "admin"
+      SLAVE_DB_PASSWORD: "ExchangeDevPass2026"
       REDIS_HOST: "exchange-cicd-dev-redis.pyibmf.0001.apn2.cache.amazonaws.com"
       REDIS_PASSWORD: ""

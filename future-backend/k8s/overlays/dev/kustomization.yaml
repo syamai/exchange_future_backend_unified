@@ -58,17 +58,17 @@ patches:
     target:
       kind: Deployment
 
-  # Update Secret with AWS RDS connection strings
+  # Update Secret with AWS RDS connection strings (critonex account)
   - patch: |
       - op: replace
         path: /stringData/MYSQL_HOST
-        value: "exchange-dev-mysql.clhjvle5bfjb.ap-northeast-2.rds.amazonaws.com"
+        value: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
       - op: replace
         path: /stringData/MYSQL_USERNAME
         value: "admin"
       - op: replace
         path: /stringData/MYSQL_PASSWORD
-        value: "zo1zhPmD42rQKZ7j"
+        value: "ExchangeDevPass2026"
     target:
       kind: Secret
       name: future-backend-secrets

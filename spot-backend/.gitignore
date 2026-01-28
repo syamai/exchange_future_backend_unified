@@ -1,8 +1,26 @@
 vendor/
 node_modules/
-public/
-storage/
-!storage/api-docs/api-docs.json
+
+# Public folder - keep essential files, ignore large static assets
+public/hot
+public/storage
+public/build
+public/fonts/
+public/images/
+public/js/
+public/css/
+public/white-paper-resources/
+public/api/
+public/favicon/
+
+# Storage - ignore logs and cache, keep structure
+storage/*.key
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+!storage/framework/.gitkeep
+!storage/logs/.gitkeep
 
 .env
 .env.example

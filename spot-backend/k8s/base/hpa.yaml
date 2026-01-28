@@ -2,7 +2,6 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: spot-backend-api-hpa
-  namespace: spot-backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -28,7 +27,6 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: spot-backend-worker-hpa
-  namespace: spot-backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

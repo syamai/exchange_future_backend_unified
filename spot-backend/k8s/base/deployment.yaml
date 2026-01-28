@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spot-backend-api
-  namespace: spot-backend
   labels:
     app: spot-backend
     component: api
@@ -65,7 +64,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spot-backend-worker
-  namespace: spot-backend
   labels:
     app: spot-backend
     component: worker
@@ -104,7 +102,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spot-matching-engine
-  namespace: spot-backend
   labels:
     app: spot-backend
     component: matching-engine

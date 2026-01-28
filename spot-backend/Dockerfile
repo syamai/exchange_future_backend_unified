@@ -30,6 +30,9 @@ RUN git clone https://github.com/edenhill/librdkafka.git \
     && pecl install rdkafka \
     && docker-php-ext-enable rdkafka
 
+# Install phpredis extension (Swoole will hook it for coroutine support)
+RUN pecl install redis && docker-php-ext-enable redis
+
 # Install Swoole extension for coroutine-based async processing
 RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \

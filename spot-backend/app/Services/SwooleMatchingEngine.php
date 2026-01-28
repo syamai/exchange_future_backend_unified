@@ -9,9 +9,9 @@ use App\Models\Order;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Redis;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
-use Swoole\Coroutine\Redis;
 use Swoole\Timer;
 
 /**

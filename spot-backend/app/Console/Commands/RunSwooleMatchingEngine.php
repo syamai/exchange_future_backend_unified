@@ -89,26 +89,17 @@ class RunSwooleMatchingEngine extends Command
      */
     private function enableCoroutineHooks(): void
     {
-        // Hook PDO, Redis, file operations, etc. for coroutine support
-        Runtime::enableCoroutine(
-            SWOOLE_HOOK_TCP |
-            SWOOLE_HOOK_UNIX |
-            SWOOLE_HOOK_UDP |
-            SWOOLE_HOOK_UDG |
-            SWOOLE_HOOK_SSL |
-            SWOOLE_HOOK_TLS |
-            SWOOLE_HOOK_SLEEP |
-            SWOOLE_HOOK_FILE |
-            SWOOLE_HOOK_STREAM_FUNCTION |
-            SWOOLE_HOOK_BLOCKING_FUNCTION |
-            SWOOLE_HOOK_PDO_PGSQL |
-            SWOOLE_HOOK_PDO_ODBC |
-            SWOOLE_HOOK_PDO_ORACLE |
-            SWOOLE_HOOK_PDO_SQLITE
-            // Note: SWOOLE_HOOK_PDO_MYSQL may cause issues with some queries
-        );
+        // Use SWOOLE_HOOK_ALL for maximum compatibility across Swoole versions
+        // This enables all available hooks including TCP, UDP, SSL, File, PDO, etc.
+        // Note: Excludes SWOOLE_HOOK_CURL by default to avoid conflicts
+        $flags = SWOOLE_HOOK_ALL;
 
-        $this->info("Swoole coroutine hooks enabled");
+        // Optionally exclude PDO_MYSQL hook if it causes issues
+        // $flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_PDO_MYSQL;
+
+        Runtime::enableCoroutine($flags);
+
+        $this->info("Swoole coroutine hooks enabled (SWOOLE_HOOK_ALL)");
     }
 
     /**

@@ -119,8 +119,8 @@ spec:
         - name: matching-engine
           image: exchange/spot-backend:latest
           imagePullPolicy: Always
-          # Clear config cache first to ensure env vars are used, then start Swoole engine
-          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan matching-engine:swoole usdt btc --workers=4"]
+          # Rebuild config cache with current env vars, then start Swoole engine
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan matching-engine:swoole usdt btc --workers=4"]
           resources:
             requests:
               cpu: "500m"

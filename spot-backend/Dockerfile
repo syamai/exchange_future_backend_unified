@@ -40,9 +40,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /var/www/html
 COPY . .
-RUN composer install --optimize-autoloader
+RUN composer install --optimize-autoloader --no-dev
 RUN composer dump-autoload --optimize
-RUN php artisan config:cache
+# Note: config:cache removed - config will be loaded from env vars at runtime
 # RUN php artisan route:cache
 
 RUN php artisan storage:link && \

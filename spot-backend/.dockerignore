@@ -1,0 +1,47 @@
+# Environment files (should be provided via K8s secrets/configmaps)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Development files
+.idea
+.vscode
+.editorconfig
+
+# Testing
+tests
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Benchmarks
+benchmarks
+
+# Docker files (avoid recursive copy)
+Dockerfile
+docker-compose*.yml
+
+# Kubernetes manifests
+k8s
+
+# Cache and logs
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Vendor lock (will be regenerated)
+vendor
+
+# Node modules if any
+node_modules

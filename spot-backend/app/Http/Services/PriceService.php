@@ -1222,7 +1222,7 @@ class PriceService
             if ($currentPrice && $lastPrice) {
                 $absoluteChange = $currentPrice->price - $lastPrice->price;
                 $price = $currentPrice->price;
-                $change = round($absoluteChange / $lastPrice->price, 4);
+                $change = $lastPrice->price != 0 ? round($absoluteChange / $lastPrice->price, 4) : 0;
             } elseif ($currentPrice) {
                 $price = $currentPrice->price;
             }

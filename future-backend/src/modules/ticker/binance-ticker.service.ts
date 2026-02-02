@@ -122,7 +122,9 @@ export class BinanceTickerService implements OnModuleDestroy {
   }
 
   public async getAllTickerData(): Promise<any[]> {
+    console.log(`[getAllTickerData] connections size: ${this.connections.size}`);
     for (const connectionValue of this.connections.values()) {
+      console.log(`[getAllTickerData] ${connectionValue.symbol}: data=${connectionValue.data ? 'exists' : 'null'}, lastPrice=${connectionValue.data?.lastPrice}`);
       if (new Date().getTime() - connectionValue.lastUpdated > 30000) {
         console.log(`Connection was lost. Reconnect ${connectionValue.symbol}`);
 

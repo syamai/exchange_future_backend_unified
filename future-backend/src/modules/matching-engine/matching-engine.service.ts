@@ -69,6 +69,7 @@ import { UserTradeToRemoveBotOrderRepository } from "src/models/repositories/use
 import { UserTradeToRemoveBotOrderEntity } from "src/models/entities/user-trade-to-remove-bot-order.entity";
 import { OPERATION_ID_DIVISOR } from "src/shares/number-formatter";
 import { REDIS_COMMON_PREFIX } from "src/shares/redis-client/common-prefix";
+import { OrderRouterService } from "src/shares/order-router/order-router.service";
 
 @Injectable()
 export class MatchingEngineService extends BaseEngineService {
@@ -125,7 +126,8 @@ export class MatchingEngineService extends BaseEngineService {
     // private readonly redisService: RedisService,
     private readonly redisClient: RedisClient,
     @InjectRepository(UserTradeToRemoveBotOrderRepository, "master")
-    private readonly userTradeToRemoveBotOrderRepoMaster: UserTradeToRemoveBotOrderRepository
+    private readonly userTradeToRemoveBotOrderRepoMaster: UserTradeToRemoveBotOrderRepository,
+    private readonly orderRouterService: OrderRouterService
   ) {
     super();
   }
@@ -151,12 +153,18 @@ export class MatchingEngineService extends BaseEngineService {
         lastFundingHistoryId,
       },
     };
-    await producer.send({
-      topic: isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
-      messages: [{ value: JSON.stringify(command) }],
-    });
+
+    // Broadcast to all shards when sharding is enabled
+    if (!isTest && this.orderRouterService.isShardingEnabled()) {
+      await this.orderRouterService.broadcastToAllShards(command, true);
+    } else {
+      await producer.send({
+        topic: isTest
+          ? KafkaTopics.test_matching_engine_preload
+          : KafkaTopics.matching_engine_preload,
+        messages: [{ value: JSON.stringify(command) }],
+      });
+    }
   }
 
   public async loadInstruments(producer: Producer, isTest: boolean = false): Promise<void> {
@@ -172,14 +180,13 @@ export class MatchingEngineService extends BaseEngineService {
       );
     }
     await Promise.all([
-      task, 
-      this.sendData(
-        producer, 
-        isTest
-          ? KafkaTopics.test_matching_engine_preload
-          : KafkaTopics.matching_engine_preload, 
-        CommandCode.UPDATE_INSTRUMENT, 
-        instruments
+      task,
+      this.sendDataToPreloadTopics(
+        producer,
+        CommandCode.UPDATE_INSTRUMENT,
+        instruments,
+        isTest,
+        this.orderRouterService
       )
     ]);
   }
@@ -211,13 +218,12 @@ export class MatchingEngineService extends BaseEngineService {
         lastPrice: tickerObject[`${symbols[i]}`] ? tickerObject[`${symbols[i]}`] : null,
       });
     }
-    await this.sendData(
-      producer, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
-      CommandCode.UPDATE_INSTRUMENT_EXTRA, 
-      instrumentExtras
+    await this.sendDataToPreloadTopics(
+      producer,
+      CommandCode.UPDATE_INSTRUMENT_EXTRA,
+      instrumentExtras,
+      isTest,
+      this.orderRouterService
     );
   }
 
@@ -225,26 +231,24 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<AccountEntity[]> => {
       return await this.accountService.findBatch(fromId, size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.CREATE_ACCOUNT, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.CREATE_ACCOUNT,
+      isTest,
+      this.orderRouterService
     );
   }
 
   public async loadBotAccounts(producer: Producer, isTest: boolean = false): Promise<void> {
     const botAccounts = await this.accountService.getBotAccounts();
     if (botAccounts.length === 0) return;
-    await this.sendData(
-      producer, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
-      CommandCode.LOAD_BOT_ACCOUNT, 
-      botAccounts
+    await this.sendDataToPreloadTopics(
+      producer,
+      CommandCode.LOAD_BOT_ACCOUNT,
+      botAccounts,
+      isTest,
+      this.orderRouterService
     );
   }
 
@@ -252,13 +256,12 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<PositionEntity[]> => {
       return await this.positionService.findBatch(fromId, size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.LOAD_POSITION, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.LOAD_POSITION,
+      isTest,
+      this.orderRouterService
     );
   }
 
@@ -269,13 +272,12 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<PositionHistoryEntity[]> => {
       return await this.positionService.findHistoryBatch(Math.max(firstId, fromId), size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.LOAD_POSITION_HISTORY, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.LOAD_POSITION_HISTORY,
+      isTest,
+      this.orderRouterService
     );
 
     await this.savePositionHistoryTimestamp(date.getTime());
@@ -288,13 +290,12 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<FundingHistoryEntity[]> => {
       return await this.fundingService.findHistoryBatch(Math.max(firstId, fromId), size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.LOAD_FUNDING_HISTORY, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.LOAD_FUNDING_HISTORY,
+      isTest,
+      this.orderRouterService
     );
 
     await this.saveFundingHistoryTimestamp(date.getTime());
@@ -314,11 +315,12 @@ export class MatchingEngineService extends BaseEngineService {
     // get all order PENDING
     const orders = await this.orderRepository.find({ where: { status: OrderStatus.PENDING } });
     if (orders && orders.length > 0) {
-      await this.sendData(
+      await this.sendDataToPreloadTopics(
         producer,
-        isTest ? KafkaTopics.test_matching_engine_preload : KafkaTopics.matching_engine_preload,
         CommandCode.LOAD_ORDER,
-        orders
+        orders,
+        isTest,
+        this.orderRouterService
       );
     }
   }
@@ -335,11 +337,12 @@ export class MatchingEngineService extends BaseEngineService {
           ordersToSend.length === BATCH_SIZE ||
           i === orders.length - 1
         ) {
-          await this.sendData(
-            producer, 
-            isTest ? KafkaTopics.test_matching_engine_preload : KafkaTopics.matching_engine_preload, 
-            CommandCode.LOAD_ORDER, 
-            ordersToSend
+          await this.sendDataToPreloadTopics(
+            producer,
+            CommandCode.LOAD_ORDER,
+            ordersToSend,
+            isTest,
+            this.orderRouterService
           );
           ordersToSend = [];
         }
@@ -354,11 +357,12 @@ export class MatchingEngineService extends BaseEngineService {
     // get all order UNTRIGGERED
     const orders = await this.orderRepository.find({ where: { status: OrderStatus.UNTRIGGERED } });
     if (orders && orders.length > 0) {
-      await this.sendData(
+      await this.sendDataToPreloadTopics(
         producer,
-        isTest ? KafkaTopics.test_matching_engine_preload : KafkaTopics.matching_engine_preload,
         CommandCode.LOAD_ORDER,
-        orders
+        orders,
+        isTest,
+        this.orderRouterService
       );
     }
   }
@@ -367,13 +371,12 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<OrderEntity[]> => {
       return await this.orderService.findOrderBatch(status, fromId, size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.LOAD_ORDER, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.LOAD_ORDER,
+      isTest,
+      this.orderRouterService
     );
   }
 
@@ -382,13 +385,12 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<TransactionEntity[]> => {
       return await this.transactionService.findRecentDeposits(yesterday, fromId, size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.DEPOSIT, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.DEPOSIT,
+      isTest,
+      this.orderRouterService
     );
   }
 
@@ -396,49 +398,52 @@ export class MatchingEngineService extends BaseEngineService {
     const loader = async (fromId: number, size: number): Promise<TransactionEntity[]> => {
       return await this.transactionService.findPendingWithdrawals(fromId, size);
     };
-    await this.loadData(
-      producer, 
-      loader, 
-      CommandCode.WITHDRAW, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload,
+    await this.loadDataSharded(
+      producer,
+      loader,
+      CommandCode.WITHDRAW,
+      isTest,
+      this.orderRouterService
     );
   }
 
   public async loadLeverageMargin(producer: Producer, isTest: boolean = false): Promise<void> {
     const leverageMargins = await this.leverageMarginService.findAll();
-    await this.sendData(
-      producer, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload, 
-      CommandCode.LOAD_LEVERAGE_MARGIN, 
-      leverageMargins
+    await this.sendDataToPreloadTopics(
+      producer,
+      CommandCode.LOAD_LEVERAGE_MARGIN,
+      leverageMargins,
+      isTest,
+      this.orderRouterService
     );
   }
 
   public async loadTradingRules(producer: Producer, isTest: boolean = false): Promise<void> {
     const tradingRules = await this.tradingRuleRepoReport.find();
-    await this.sendData(
-      producer, 
-      isTest
-        ? KafkaTopics.test_matching_engine_preload
-        : KafkaTopics.matching_engine_preload, 
-      CommandCode.LOAD_TRADING_RULE, 
-      tradingRules
+    await this.sendDataToPreloadTopics(
+      producer,
+      CommandCode.LOAD_TRADING_RULE,
+      tradingRules,
+      isTest,
+      this.orderRouterService
     );
   }
 
   public async startEngine(producer: Producer, isTest: boolean = false): Promise<void> {
     const command = { code: CommandCode.START_ENGINE };
-    await producer.send({
-      topic: 
-        isTest
-          ? KafkaTopics.test_matching_engine_preload
-          : KafkaTopics.matching_engine_preload,
-      messages: [{ value: JSON.stringify(command) }],
-    });
+
+    // Broadcast to all shards when sharding is enabled
+    if (!isTest && this.orderRouterService.isShardingEnabled()) {
+      await this.orderRouterService.broadcastToAllShards(command, true);
+    } else {
+      await producer.send({
+        topic:
+          isTest
+            ? KafkaTopics.test_matching_engine_preload
+            : KafkaTopics.matching_engine_preload,
+        messages: [{ value: JSON.stringify(command) }],
+      });
+    }
   }
 
   private static saveAccountQueue = new LinkedQueue<any>();

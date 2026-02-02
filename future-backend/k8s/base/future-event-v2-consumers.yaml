@@ -1,0 +1,97 @@
+---
+# Future Event V2 - Deposit Processing Consumer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-event-v2-deposit-consumer
+  namespace: future-backend
+  labels:
+    app: future-event-v2-deposit-consumer
+    component: consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: future-event-v2-deposit-consumer
+  template:
+    metadata:
+      labels:
+        app: future-event-v2-deposit-consumer
+        component: consumer
+    spec:
+      containers:
+        - name: deposit-consumer
+          image: exchange/future-backend:event-v2
+          imagePullPolicy: Always
+          command: ["node"]
+          args: ["dist/console.js", "future-event-v2:process-deposit"]
+          envFrom:
+            - secretRef:
+                name: future-backend-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/local.yml
+              subPath: local.yml
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+      volumes:
+        - name: config-volume
+          configMap:
+            name: future-backend-config
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+
+---
+# Future Event V2 - Principal Deduction Consumer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-event-v2-deduction-consumer
+  namespace: future-backend
+  labels:
+    app: future-event-v2-deduction-consumer
+    component: consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: future-event-v2-deduction-consumer
+  template:
+    metadata:
+      labels:
+        app: future-event-v2-deduction-consumer
+        component: consumer
+    spec:
+      containers:
+        - name: deduction-consumer
+          image: exchange/future-backend:event-v2
+          imagePullPolicy: Always
+          command: ["node"]
+          args: ["dist/console.js", "future-event-v2:process-principal-deduction"]
+          envFrom:
+            - secretRef:
+                name: future-backend-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/local.yml
+              subPath: local.yml
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+      volumes:
+        - name: config-volume
+          configMap:
+            name: future-backend-config
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always

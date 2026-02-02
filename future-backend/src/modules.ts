@@ -44,6 +44,7 @@ import { BotModule } from "./modules/bot/bot.module";
 import { FirebaseNotiModule } from "./modules/firebase-noti-module/firebase-noti.module";
 import { UserStatisticModule } from "./modules/statistic/user-statistic.module";
 import { FutureEventModule } from "./modules/future-event/future-event.module";
+import { FutureEventV2Module } from "./modules/future-event-v2/future-event-v2.module";
 import { RedisModule } from "./shares/redis-client/redis-module";
 import { BullMqModule } from "./modules/bull-mq/bull-mq.module";
 import { ToolModule } from "./shares/tools/tool.module";
@@ -104,6 +105,7 @@ const Modules = [
   FirebaseNotiModule,
   UserStatisticModule,
   FutureEventModule,
+  FutureEventV2Module,
   BullMqModule,
   ToolModule,
   PositionHistoryBySessionModule

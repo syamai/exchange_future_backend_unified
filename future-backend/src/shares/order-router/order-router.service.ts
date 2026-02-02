@@ -356,4 +356,82 @@ export class OrderRouterService implements OnModuleInit {
   isSymbolPaused(symbol: string): boolean {
     return this.pausedSymbols.has(symbol);
   }
+
+  /**
+   * Broadcast a command to all shards (for global commands like INITIALIZE_ENGINE, START_ENGINE)
+   * Uses preload topic for initialization commands
+   */
+  async broadcastToAllShards<T = unknown>(
+    command: MatchingEngineCommand<T>,
+    usePreloadTopic = false
+  ): Promise<RoutingResult[]> {
+    if (!this.shardingEnabled) {
+      const topic = usePreloadTopic
+        ? "matching_engine_preload"
+        : LEGACY_MATCHING_ENGINE_TOPIC;
+      await this.kafkaClient.send(topic, command);
+      return [
+        {
+          shardId: "legacy",
+          topic,
+          success: true,
+        },
+      ];
+    }
+
+    const results: RoutingResult[] = [];
+
+    for (const shard of this.shardInfoMap.values()) {
+      const topic = usePreloadTopic
+        ? shard.kafkaInputTopic.replace("-input", "-preload")
+        : shard.kafkaInputTopic;
+
+      try {
+        await this.kafkaClient.send(topic, command);
+        results.push({
+          shardId: shard.shardId,
+          topic,
+          success: true,
+        });
+        this.logger.debug(
+          `Broadcast command ${command.code} to shard ${shard.shardId} (${topic})`
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to broadcast to shard ${shard.shardId}: ${error.message}`
+        );
+        results.push({
+          shardId: shard.shardId,
+          topic,
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get preload topic for a shard
+   */
+  getPreloadTopicForShard(shardId: string): string {
+    const shard = this.shardInfoMap.get(shardId);
+    if (!shard) {
+      return "matching_engine_preload";
+    }
+    return shard.kafkaInputTopic.replace("-input", "-preload");
+  }
+
+  /**
+   * Get all preload topics
+   */
+  getAllPreloadTopics(): string[] {
+    if (!this.shardingEnabled) {
+      return ["matching_engine_preload"];
+    }
+    return Array.from(this.shardInfoMap.values()).map((shard) =>
+      shard.kafkaInputTopic.replace("-input", "-preload")
+    );
+  }
 }

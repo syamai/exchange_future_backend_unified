@@ -45,6 +45,9 @@ import { PositionHistoryBySessionRepository } from "./repositories/position-hist
 import { UserRewardFutureEventUsedDetailRepository } from "./repositories/user-reward-future-event-used-detail.repository";
 import { TradingVolumeSessionRepository } from "./repositories/trading-volume-session.repository";
 import { TradingVolumeSessionLogRepository } from "./repositories/trading-volume-session-log.repository";
+import { EventSettingV2Repository } from "./repositories/event-setting-v2.repository";
+import { UserBonusV2Repository } from "./repositories/user-bonus-v2.repository";
+import { UserBonusV2HistoryRepository } from "./repositories/user-bonus-v2-history.repository";
 
 const commonRepositories = [
   AccountRepository,
@@ -91,7 +94,10 @@ const commonRepositories = [
   OrderWithPositionHistoryBySessionRepository,
   UserRewardFutureEventUsedDetailRepository,
   TradingVolumeSessionRepository,
-  TradingVolumeSessionLogRepository
+  TradingVolumeSessionLogRepository,
+  EventSettingV2Repository,
+  UserBonusV2Repository,
+  UserBonusV2HistoryRepository
 ];
 
 @Global()

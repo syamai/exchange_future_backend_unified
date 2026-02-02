@@ -7,6 +7,7 @@ resources:
   - secret.yaml
   - deployment.yaml
   - service.yaml
+  - future-event-v2-consumers.yaml
 
 commonLabels:
   app.kubernetes.io/name: future-backend
@@ -14,4 +15,5 @@ commonLabels:
 
 images:
   - name: exchange/future-backend
-    newTag: "1.0.0"
+    newTag: "event-v2"
+    newName: 990781424619.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/future-backend

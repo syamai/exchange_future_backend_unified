@@ -35,7 +35,7 @@ export interface ShardInfo {
  */
 export interface MatchingEngineCommand<T = unknown> {
   code: string;
-  data: T;
+  data?: T;
 }
 
 /**

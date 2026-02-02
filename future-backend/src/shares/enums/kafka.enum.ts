@@ -91,3 +91,16 @@ export const FutureEventKafkaTopic = enumize(
   "rewards_to_process_trading_volume_session",
   "trades_for_process_fee_voucher"
 )
+
+// Future Event V2 - Deposit Bonus System
+export const FutureEventV2KafkaTopic = enumize(
+  "future_event_v2_deposit_approved",       // Deposit transactions to process for bonus
+  "future_event_v2_principal_deduction",    // Transactions for principal deduction (fees, losses)
+  "future_event_v2_liquidation_trigger"     // Liquidation trigger events
+)
+
+export const FutureEventV2KafkaGroup = enumize(
+  "future_event_v2_process_deposit",
+  "future_event_v2_process_principal_deduction",
+  "future_event_v2_process_liquidation"
+)

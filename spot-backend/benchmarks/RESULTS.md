@@ -1,7 +1,61 @@
 # PHP Matching Engine Performance Benchmark Results
 
-**Date**: 2025-01-18
-**Environment**: macOS, PHP 8.4, Redis 7.4.7 (Docker)
+**Date**: 2026-01-26 (Updated)
+**Environment**: macOS, PHP 8.4, MySQL 8.0, Redis 7.4 (Docker)
+
+---
+
+## 0. WriteBuffer Batch Write Performance (NEW - Phase 2)
+
+**Date**: 2026-01-26
+
+### Buffer Operations (Memory Only)
+
+| Operations | Duration (ms) | Ops/sec | ms/op |
+|------------|---------------|---------|-------|
+| 100 | 1.27 | 78,855 | 0.0127 |
+| 500 | 5.08 | 98,462 | 0.0102 |
+| 1,000 | 10.79 | 92,704 | 0.0108 |
+| 5,000 | 58.52 | 85,442 | 0.0117 |
+| 10,000 | 127.48 | 78,444 | 0.0127 |
+
+**Key Finding**: Buffer add operations are extremely fast (~0.01ms per operation).
+
+### Sync vs Batch DB Writes (500 operations)
+
+| Approach | Duration (ms) | Ops/sec | ms/op | Improvement |
+|----------|---------------|---------|-------|-------------|
+| Sync (individual) | 1,400.98 | 357 | 2.80 | - |
+| Batch 10 | 360.71 | 1,386 | 0.72 | 74.3% |
+| Batch 50 | 102.66 | 4,870 | 0.21 | 92.7% |
+| Batch 100 | 75.04 | 6,663 | 0.15 | 94.6% |
+| Batch 200 | 73.05 | 6,845 | 0.15 | 94.8% |
+| **Batch 500** | **54.61** | **9,155** | **0.11** | **96.1%** |
+
+**Key Finding**: Batch size of 100-500 provides optimal performance with **25.7x speedup**.
+
+### TPS Projection
+
+| Component | Overhead (ms) |
+|-----------|---------------|
+| Pure matching | 0.050 |
+| Buffer add | 0.011 |
+| Batch flush (amortized) | 0.109 |
+| **Total per match** | **0.170** |
+
+**Projected TPS: 5,882 matches/sec** (exceeds 5,000 TPS target!)
+
+### Performance Summary
+
+```
+Before (Sync writes):  357 TPS
+After (Batch writes):  5,882 TPS
+Improvement:           16.5x
+```
+
+---
+
+**Previous Results (2025-01-18)**:
 
 ---
 

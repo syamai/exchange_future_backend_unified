@@ -564,3 +564,144 @@ Week 6    Phase 5: Infrastructure Upgrade    → 안정화
 | **1** | Spot WriteBuffer 클래스 구현 | 200 → 2,000 TPS |
 | **2** | phpredis 확장 설치 | Redis Stream 활성화 |
 | **3** | RDS IOPS 증설 (3K → 10K) | 배치 쓰기 지원 |
+
+
+## AWS 계정 정보
+     - **Account**: 990781424619 (critonex)
+     - **User**: Prod-ahn
+     - **Region**: ap-northeast-2 (서울)
+
+---
+
+## exchange-cicd-dev 인프라 정보 (2026-01-28)
+
+### Kafka (Redpanda) EC2
+- **Instance ID**: `i-06b94401e85fad898`
+- **Private IP**: `172.31.13.13`
+- **Public IP**: `52.78.109.192`
+- **Type**: t3.medium
+- **VPC**: vpc-0bd37d37ac2f47d7f (기본 VPC, 172.31.0.0/16)
+- **Security Group**: sg-042f12df0c594b833 (exchange-cicd-dev-kafka-sg)
+
+### Kafka 설정 업데이트 방법
+
+EC2 Instance Connect 사용:
+```bash
+# 1. SSH 키 푸시
+AWS_PROFILE=critonex aws ec2-instance-connect send-ssh-public-key \
+  --region ap-northeast-2 \
+  --instance-id i-06b94401e85fad898 \
+  --instance-os-user ec2-user \
+  --ssh-public-key "$(cat ~/.ssh/id_ed25519.pub)"
+
+# 2. SSH 접속 (60초 내)
+ssh ec2-user@52.78.109.192
+
+# 3. Redpanda 상태 확인
+rpk cluster info
+rpk topic list
+```
+
+### Kubernetes Secrets
+```bash
+# Matching Engine Kafka 설정 확인
+kubectl get secret dev-matching-engine-secrets -n matching-engine-dev \
+  -o jsonpath='{.data.KAFKA_BOOTSTRAP_SERVERS}' | base64 -d
+
+# Kafka IP 변경 시
+kubectl patch secret dev-matching-engine-secrets -n matching-engine-dev \
+  --type='json' \
+  -p='[{"op": "replace", "path": "/data/KAFKA_BOOTSTRAP_SERVERS", "value": "'$(echo -n "NEW_IP:9092" | base64)'"}]'
+
+# Matching Engine 재시작
+kubectl rollout restart statefulset -n matching-engine-dev
+```
+
+### 주의사항
+- IMDSv2 사용: 메타데이터 조회 시 토큰 필요
+- Redpanda advertised_kafka_api 설정이 private IP로 되어 있어야 함
+
+---
+
+## Future Event V2 (입금 보너스 시스템) - 2026-01-30
+
+### 개요
+
+입금 시 보너스를 지급하고, 원금/보너스를 분리 관리하는 이벤트 시스템.
+- **원금**: 손실, 수수료, 펀딩비 차감 대상
+- **보너스**: 원금 소진 전까지 유지, 원금 <= 0 시 청산과 함께 삭제
+
+### 관련 파일
+
+```
+future-backend/src/
+├── models/entities/
+│   ├── event-setting-v2.entity.ts      # 이벤트 설정
+│   ├── user-bonus-v2.entity.ts         # 유저 보너스 (원금/보너스 분리)
+│   └── user-bonus-v2-history.entity.ts # 원금 변경 이력
+├── models/repositories/
+│   ├── event-setting-v2.repository.ts
+│   ├── user-bonus-v2.repository.ts
+│   └── user-bonus-v2-history.repository.ts
+├── modules/future-event-v2/
+│   ├── future-event-v2.service.ts      # 핵심 비즈니스 로직
+│   ├── future-event-v2.controller.ts   # REST API
+│   ├── future-event-v2.console.ts      # Kafka Consumer
+│   └── dto/                            # DTO 파일들
+├── migrations/
+│   └── 1769785760464-create-future-event-v2-tables.ts
+└── shares/enums/kafka.enum.ts          # Kafka 토픽 정의
+```
+
+### 배포 절차
+
+```bash
+cd future-backend
+
+# 1. DB 마이그레이션 실행
+yarn typeorm:run
+
+# 2. Kafka 토픽 생성 (Redpanda)
+rpk topic create future_event_v2_deposit_approved
+rpk topic create future_event_v2_principal_deduction
+rpk topic create future_event_v2_liquidation_trigger
+
+# 3. Consumer 프로세스 시작 (별도 터미널 또는 PM2)
+yarn console:dev future-event-v2:process-deposit
+yarn console:dev future-event-v2:process-principal-deduction
+```
+
+### Kafka 토픽
+
+| 토픽 | 용도 | Producer | Consumer |
+|------|------|----------|----------|
+| `future_event_v2_deposit_approved` | 입금 트랜잭션 처리 | 입금 서비스 | FutureEventV2Console |
+| `future_event_v2_principal_deduction` | 원금 차감 (손실/수수료) | 매칭 엔진 | FutureEventV2Console |
+| `future_event_v2_liquidation_trigger` | 청산 트리거 | FutureEventV2Service | 매칭 엔진 |
+
+### API 엔드포인트
+
+**Admin API** (`/admin/future-event-v2`):
+- `POST /event-settings` - 이벤트 생성
+- `PUT /event-settings/:id` - 이벤트 수정
+- `POST /event-settings/:id/toggle` - 이벤트 온/오프
+- `GET /event-settings` - 이벤트 목록
+- `GET /bonuses` - 보너스 목록 (페이지네이션)
+- `POST /bonuses/:id/revoke` - 보너스 취소
+
+**User API** (`/future-event-v2`):
+- `GET /bonuses` - 내 보너스 목록
+- `GET /active-events` - 활성 이벤트 목록
+
+### 테스트
+
+```bash
+# 단위 테스트 실행
+yarn test -- --testPathPattern="future-event-v2"
+
+# 결과: 19개 테스트 케이스 통과
+```
+
+### 설계 문서
+
+- `docs/plans/2026-01-30-future-event-v2-design.md` - 상세 설계 문서

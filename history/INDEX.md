@@ -168,4 +168,99 @@ Futures Backend의 Matching Engine에 OrderRouter 통합을 통한 샤딩 지원
 
 ---
 
-**마지막 업데이트**: 2026-01-24 10:58:55
+### 6. 5,000 TPS 아키텍처 종합 검토 및 진행 현황 추적 (2026-01-25)
+
+**파일**: [`2026-01-25_01-24-19_5000TPS_ArchitectureReviewAndProgressTracking.md`](./2026-01-25_01-24-19_5000TPS_ArchitectureReviewAndProgressTracking.md)
+
+**요약**:
+Spot Backend의 5,000 TPS 달성을 위한 종합 아키텍처 검토 보고서 및 성능 최적화 진행 현황 추적. 현재 병목 분석, 최적화 전략, 6주 구현 로드맵, 비용 추정을 포함한 상세 보고서 작성.
+
+**주요 내용**:
+- **핵심 발견**: DB 동기 쓰기가 99% 병목 (27,424 TPS 이론 vs 200 TPS 실제)
+- **성능 벤치마크**: 순수 인메모리 27,424 TPS, Heap vs Array 456배 차이
+- **최적화 전략**: Swoole + Redis Stream + 배치 쓰기 + 분산 matching
+- **6주 로드맵**: 200 TPS → 5,000 TPS (4주 개발 + 2주 검증)
+- **비용 추정**: AWS 스팟 인스턴스 월 $3,500 (73% 비용 절감)
+
+**생성 문서**:
+- `docs/plans/archive/2026-01-25/01-22-48-2026-01-25-spot-performance-optimization-progress.md` (215줄)
+- `docs/plans/archive/2026-01-25/01-22-48-2026-01-25-5000-tps-comprehensive-architecture-review.md` (951줄)
+- `spot-backend/history/INDEX.md` (신규 생성, 102줄)
+
+**수정 문서**:
+- `CLAUDE.md` - 프로젝트 현황 및 roadmap 업데이트 (257줄 추가)
+- `history/INDEX.md` - 기존 대비 3배 확장 (121줄 추가)
+
+**Git 커밋**: `2c38ec5` - docs: add 5000 TPS architecture review and progress tracking
+
+**소요 시간**: 약 5시간
+- 아키텍처 분석: 2시간
+- 문서 작성: 2시간
+- 정리 및 인덱싱: 1시간
+
+---
+
+### 7. WriteBuffer 클래스 구현 - DB 배치 쓰기 (2026-01-25)
+
+**파일**: [`2026-01-25_02-06-37_WriteBuffer-BatchWrite-Implementation.md`](./2026-01-25_02-06-37_WriteBuffer-BatchWrite-Implementation.md)
+
+**요약**:
+Spot Backend 5,000 TPS 성능 최적화 Phase 2의 핵심 컴포넌트인 WriteBuffer 클래스 구현. Future-backend의 saveAccountsV2 패턴을 참조하여 DB 배치 쓰기 기능 개발.
+
+**주요 내용**:
+- WriteBuffer: 비동기 배치 쓰기 (Production)
+- SyncWriteBuffer: 동기 쓰기 (Testing)
+- FlushResult: Flush 결과 DTO
+- WriteBufferFactory: 환경별 자동 선택
+- Deadlock 자동 재시도 (최대 3회, exponential backoff)
+- 500ms 또는 100개 도달 시 자동 flush
+
+**생성 파일**:
+- `app/Services/Buffer/WriteBufferInterface.php`
+- `app/Services/Buffer/WriteBuffer.php`
+- `app/Services/Buffer/SyncWriteBuffer.php`
+- `app/Services/Buffer/FlushResult.php`
+- `app/Services/Buffer/WriteBufferFactory.php`
+- `tests/Unit/Services/Buffer/WriteBufferTest.php` (13개 테스트)
+- `tests/Unit/Services/Buffer/WriteBufferFactoryTest.php` (5개 테스트)
+
+**테스트 결과**:
+- ✅ WriteBuffer 단위 테스트: 18/18 통과
+- ✅ 전체 Unit 테스트: 43/43 통과
+
+**성능 개선 목표**:
+- Before: 5-10ms per order → 100-200 TPS
+- After: 0.2ms per order → 5,000 TPS (25배 향상)
+
+**소요 시간**: 약 1시간
+
+---
+
+---
+
+### 8. Kafka 인프라 및 배포 가이드 문서화 (2026-01-30)
+
+**파일**: [`2026-01-30_13-23-09_KafkaInfrastructureAndDeploymentDocumentation.md`](./2026-01-30_13-23-09_KafkaInfrastructureAndDeploymentDocumentation.md)
+
+**요약**:
+Future-Backend의 WebSocket 이벤트 시스템(Event-Server) 분석 및 AWS Kafka 인프라(Redpanda) 배포 가이드 작성. AWS 계정 정보, EC2 Kafka 서버 구성, Kubernetes Secret 관리 방법 등을 문서화.
+
+**주요 내용**:
+- **WebSocket 이벤트 시스템**: EventGateway의 JWT 인증, Socket.IO 기반 양방향 통신, Room 기반 메시징
+- **AWS 계정**: 990781424619 (critonex), ap-northeast-2 (서울)
+- **Kafka 서버**: EC2 t3.medium (52.78.109.192), Redpanda 엔진
+- **관리 방법**: AWS EC2 Instance Connect, Kubernetes secret 패치, rpk CLI
+- **보안**: IMDSv2, Redpanda advertised_kafka_api 설정
+
+**수정된 파일**:
+- `CLAUDE.md` - AWS 계정 정보 및 Kafka 인프라 가이드 추가 (59줄)
+
+**Git 상태**:
+- 수정 파일: 1개 (CLAUDE.md)
+- 미커밋 상태
+
+**소요 시간**: 약 0.5시간
+
+---
+
+**마지막 업데이트**: 2026-01-30 13:23:09

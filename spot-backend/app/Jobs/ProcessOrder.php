@@ -109,6 +109,7 @@ class ProcessOrder implements ShouldQueue
             if ($this->lastRun + $this->checkingInterval - 500 < Utils::currentMilliseconds()) {
                 // if last matching take more than 3s to finish
                 // we need end this processor, because other processor has been started
+                $this->flushWriteBuffer();
                 return;
             }
             //echo "\nlanvo::handle run: ".$this->lastRun;
@@ -155,9 +156,15 @@ class ProcessOrder implements ShouldQueue
                 }
             }
 
+            // Flush WriteBuffer periodically during batch processing
+            if ($this->useBufferedWrites && $this->writeBuffer->shouldFlush()) {
+                $this->flushWriteBuffer();
+            }
+
             if (Utils::isTesting()) {
                 // In testing, continue until no more matches
                 if ($batchMatchCount == 0) {
+                    $this->flushWriteBuffer();
                     break;
                 }
                 continue;
@@ -693,7 +700,12 @@ class ProcessOrder implements ShouldQueue
                 }
             }
 
-            $remaining = $this->orderService->matchOrders($buyOrder, $sellOrder, $isBuyerMaker);
+            // Use buffered matching for high-performance batch writes if enabled
+            if ($this->orderService->isBufferedWritesEnabled()) {
+                $remaining = $this->orderService->matchOrdersWithBuffering($buyOrder, $sellOrder, $isBuyerMaker);
+            } else {
+                $remaining = $this->orderService->matchOrders($buyOrder, $sellOrder, $isBuyerMaker);
+            }
 
             DB::connection('master')->commit();
             if ($remaining) {
@@ -882,5 +894,42 @@ class ProcessOrder implements ShouldQueue
     static function slog($message)
     {
         Log::info('==================== ' . $message);
+    }
+
+    /**
+     * Flush the WriteBuffer if buffered writes are enabled.
+     *
+     * This is called:
+     * - At the end of each batch processing cycle
+     * - When the matching loop exits
+     * - When the buffer reaches its size/time threshold
+     */
+    protected function flushWriteBuffer(): void
+    {
+        if (!$this->orderService->isBufferedWritesEnabled()) {
+            return;
+        }
+
+        $result = $this->orderService->flushBufferedWrites();
+
+        if ($result && $result->getTotalWritten() > 0) {
+            $this->log(sprintf(
+                "WriteBuffer flushed: %d items in %.2fms",
+                $result->getTotalWritten(),
+                $result->getDurationMs()
+            ));
+        }
+
+        if ($result && !$result->isSuccess()) {
+            Log::error("WriteBuffer flush failed", $result->getErrors());
+        }
+    }
+
+    /**
+     * Check if buffered writes are enabled.
+     */
+    public function isBufferedWritesEnabled(): bool
+    {
+        return $this->orderService->isBufferedWritesEnabled();
     }
 }

@@ -1,0 +1,15 @@
+export enum BonusStatusV2 {
+  ACTIVE = "ACTIVE",
+  LIQUIDATED = "LIQUIDATED",
+  EXPIRED = "EXPIRED",
+  REVOKED = "REVOKED",
+}
+
+export enum BonusChangeType {
+  GRANT = "GRANT",
+  TRADING_FEE = "TRADING_FEE",
+  FUNDING_FEE = "FUNDING_FEE",
+  REALIZED_PNL = "REALIZED_PNL",
+  LIQUIDATION = "LIQUIDATION",
+  REVOKE = "REVOKE",
+}

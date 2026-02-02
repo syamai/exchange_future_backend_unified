@@ -85,6 +85,7 @@ class SettingAPIController extends AppBaseController
     public function getClients(): JsonResponse
     {
         $clientSecret = env('CLIENT_SECRET', null);
+        $clientID = null;
         if ($clientSecret) {
             $clientID = Client::query()->where('secret', $clientSecret)->value('id') ?? null;
         }

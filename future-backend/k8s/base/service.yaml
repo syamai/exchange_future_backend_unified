@@ -33,6 +33,7 @@ spec:
       protocol: TCP
       name: http
 ---
+# Internal LoadBalancer for WebSocket (kept for backward compatibility)
 apiVersion: v1
 kind: Service
 metadata:

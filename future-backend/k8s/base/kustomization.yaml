@@ -9,6 +9,7 @@ resources:
   - service.yaml
   - future-event-v2-consumers.yaml
   - ticker-worker.yaml
+  - nginx-proxy.yaml
 
 commonLabels:
   app.kubernetes.io/name: future-backend
@@ -16,5 +17,5 @@ commonLabels:
 
 images:
   - name: exchange/future-backend
-    newTag: "event-v2"
+    newTag: "main"
     newName: 990781424619.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/future-backend

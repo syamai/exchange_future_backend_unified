@@ -1,0 +1,132 @@
+---
+# Nginx Proxy ConfigMap for future-backend
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: future-backend-nginx-config
+  namespace: future-backend
+data:
+  default.conf: |
+    resolver kube-dns.kube-system.svc.cluster.local valid=5s;
+    upstream nestjs {
+        server dev-future-backend.future-backend-dev.svc.cluster.local:80;
+    }
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            proxy_pass http://nestjs;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_read_timeout 300;
+            proxy_connect_timeout 300;
+        }
+
+        location /health {
+            return 200 'OK';
+            add_header Content-Type text/plain;
+        }
+    }
+
+---
+# Nginx Proxy Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-backend-nginx
+  namespace: future-backend
+  labels:
+    app: future-backend-nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: future-backend-nginx
+  template:
+    metadata:
+      labels:
+        app: future-backend-nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: future-backend-nginx-config
+
+---
+# Nginx Proxy Service (internal ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: future-backend-nginx
+  namespace: future-backend
+  labels:
+    app: future-backend-nginx
+spec:
+  type: ClusterIP
+  selector:
+    app: future-backend-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+
+---
+# Nginx LoadBalancer with SSL termination
+apiVersion: v1
+kind: Service
+metadata:
+  name: future-backend-nginx-lb
+  namespace: future-backend
+  labels:
+    app: future-backend-nginx
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-northeast-2:990781424619:certificate/99e043ff-ab6d-45e9-b687-a6db40ab2339"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+spec:
+  type: LoadBalancer
+  selector:
+    app: future-backend-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 80

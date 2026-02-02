@@ -17,7 +17,7 @@ labels:
 images:
   - name: exchange/future-backend
     newName: 990781424619.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/future-backend
-    newTag: "event-v2"
+    newTag: "main"
 
 # Patch ConfigMap with dev local.yml
 patchesStrategicMerge:

@@ -342,7 +342,9 @@ export class TickerConsole {
       this.binanceTickerService.connectAll();
       while (true) {
         const tickers = await this.binanceTickerService.getAllTickerData();
-        // console.log(JSON.stringify(tickers));
+        if (tickers.length > 0) {
+          this.logger.log(`[Binance Ticker] Caching ${tickers.length} tickers, first: ${tickers[0]?.symbol} lastPrice: ${tickers[0]?.lastPrice}`);
+        }
 
         SocketEmitter.getInstance().emitTickers(tickers);
         // Cache tickers for API access

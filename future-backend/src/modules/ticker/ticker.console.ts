@@ -347,6 +347,16 @@ export class TickerConsole {
         SocketEmitter.getInstance().emitTickers(tickers);
         // Cache tickers for API access
         await this.cacheManager.set(TICKERS_KEY, tickers, { ttl: TICKER_TTL });
+        // Cache individual symbol lastPrice for ticker API
+        for (const ticker of tickers) {
+          if (ticker.lastPrice) {
+            await this.cacheManager.set(
+              `${LAST_PRICE_PREFIX}${ticker.symbol}`,
+              ticker.lastPrice,
+              { ttl: TICKER_LAST_PRICE_TTL }
+            );
+          }
+        }
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } catch (e) {

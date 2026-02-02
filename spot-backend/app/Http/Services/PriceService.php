@@ -563,8 +563,7 @@ class PriceService
     {
         $fakeDataTradeSpot = env("FAKE_DATA_TRADE_SPOT", false);
         if ($fakeDataTradeSpot && isset(Consts::FAKE_CURRENCY_COINS[$coin.'_'.$currency])) {
-            /*try {
-
+            try {
                 $key = "GetPriceFake:$currency:$coin:current";
                 $resultPrice = $loadCache ? Cache::get($key) : null;
                 if (!$resultPrice) {
@@ -621,15 +620,13 @@ class PriceService
                         ];
 
                         Cache::forever($key, $resultPrice);
-
                     }
                 }
                 return (object) $resultPrice;
             } catch (\Exception $e) {
                 Log::error("getPrice:fake:error");
                 Log::error($e);
-            }*/
-
+            }
         }
 
         $last24hPrice = 0;

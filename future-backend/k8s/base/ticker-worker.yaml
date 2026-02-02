@@ -1,0 +1,63 @@
+---
+# Future Backend - Binance Ticker Worker
+# Connects to Binance WebSocket and publishes ticker data
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-ticker-worker
+  namespace: future-backend
+  labels:
+    app: future-ticker-worker
+    component: worker
+    app.kubernetes.io/name: future-backend
+    app.kubernetes.io/component: ticker-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: future-ticker-worker
+  template:
+    metadata:
+      labels:
+        app: future-ticker-worker
+        component: worker
+        app.kubernetes.io/name: future-backend
+        app.kubernetes.io/component: ticker-worker
+    spec:
+      containers:
+        - name: ticker-worker
+          image: exchange/future-backend:event-v2
+          imagePullPolicy: Always
+          command: ["node"]
+          args: ["dist/console.js", "ticker:publish-binance-ticker"]
+          envFrom:
+            - secretRef:
+                name: future-backend-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/local.yml
+              subPath: local.yml
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'ticker:publish-binance-ticker' > /dev/null"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config-volume
+          configMap:
+            name: future-backend-config
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always

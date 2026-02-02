@@ -8,6 +8,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - future-event-v2-consumers.yaml
+  - ticker-worker.yaml
 
 commonLabels:
   app.kubernetes.io/name: future-backend

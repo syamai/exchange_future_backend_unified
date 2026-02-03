@@ -47,3 +47,6 @@ RUN chown -R www-data:www-data /app/storage/api-docs
 RUN export RABBITMQ_PREFIX="exchange_"
 RUN echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-ram-limit.ini
 RUN echo -e 'opcache.enable=1\nopcache.revalidate_freq=0\nopcache.validate_timestamps=0\nopcache.max_accelerated_files=10000\nopcache.max_wasted_percentage=10\nopcache.interned_strings_buffer=16\nopcache.fast_shutdown=1\nopcache.enable_cli=1\nopcache.jit_buffer_size=50M\nopcache.jit=tracing' >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
+
+# Configure PHP-FPM to listen on all interfaces (required for nginx proxy)
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf

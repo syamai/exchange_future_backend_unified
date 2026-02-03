@@ -92,25 +92,33 @@ export class BinanceTickerService implements OnModuleDestroy {
       this.fundingService.getNextFunding(ticker.symbol),
     ]);
 
-    ticker.oraclePrice = oraclePrices[0];
+    // Use oraclePrice from Redis if available, otherwise fallback to indexPrice (which is lastPrice)
+    ticker.oraclePrice = oraclePrices[0] || ticker.indexPrice || ticker.lastPrice;
     ticker.fundingRate = fundingRates[0];
     ticker.nextFunding = +nextFunding;
+    ticker.updatedAt = Date.now();
+    ticker.lastUpdateAt = Date.now();
   }
 
   mappingBinanceTicker(data: any) {
+    const now = Date.now();
+    const lastPrice = data?.c || "0";
     return {
       symbol: data.symbol,
       priceChange: data?.p || "0",
       priceChangePercent: data?.P || "0",
-      lastPrice: data?.c || "0",
+      lastPrice: lastPrice,
       lastPriceChange: new BigNumber(data?.P || "0").gte(0) ? '1' : '-1',
       highPrice: data?.h || "0",
       lowPrice: data?.l || "0",
       volume: data?.v || "0",
       quoteVolume: data?.q || "0",
-      indexPrice: data?.c || "0",
+      indexPrice: lastPrice,
+      oraclePrice: lastPrice,
       contractType: "USD_M",
       trades: [],
+      updatedAt: now,
+      lastUpdateAt: now,
     };
   }
 

@@ -100,9 +100,13 @@ export class TickerService extends BaseEngineService {
           // this.cacheManager.get<string>(`${FUNDING_PREFIX}${item.symbol}`),
         ]);
         item.lastPrice = lastPrice ? lastPrice : item.lastPrice;
-        item.indexPrice = indexPrice || "";
-        item.oraclePrice = oraclePrice || "";
+        // Use lastPrice as fallback for indexPrice and oraclePrice if not available
+        const effectiveLastPrice = item.lastPrice || "0";
+        item.indexPrice = indexPrice || effectiveLastPrice;
+        item.oraclePrice = oraclePrice || item.indexPrice;
         item.fundingRate = fundingRate || "";
+        item.updatedAt = Date.now();
+        item.lastUpdateAt = Date.now();
 
          // last check fundingRate, if not good, get data from binance
         if (!item?.fundingRate || !item?.nextFunding) {

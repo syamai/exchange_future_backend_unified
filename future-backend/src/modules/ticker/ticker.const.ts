@@ -14,6 +14,8 @@ export interface Ticker {
   nextFunding: number;
   contractType?: string;
   trades?: any[];
+  updatedAt?: number;
+  lastUpdateAt?: number;
 }
 
 export interface TickerLastPrice {

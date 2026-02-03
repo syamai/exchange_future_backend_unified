@@ -1,0 +1,63 @@
+---
+# Future Backend - Orderbook Worker
+# Consumes orderbook from Kafka and publishes to WebSocket clients
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-orderbook-worker
+  namespace: future-backend
+  labels:
+    app: future-orderbook-worker
+    component: worker
+    app.kubernetes.io/name: future-backend
+    app.kubernetes.io/component: orderbook-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: future-orderbook-worker
+  template:
+    metadata:
+      labels:
+        app: future-orderbook-worker
+        component: worker
+        app.kubernetes.io/name: future-backend
+        app.kubernetes.io/component: orderbook-worker
+    spec:
+      containers:
+        - name: orderbook-worker
+          image: exchange/future-backend:main
+          imagePullPolicy: Always
+          command: ["node"]
+          args: ["dist/console.js", "orderbook:publish-to-socket"]
+          envFrom:
+            - secretRef:
+                name: future-backend-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/local.yml
+              subPath: local.yml
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'orderbook:publish-to-socket' > /dev/null"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config-volume
+          configMap:
+            name: future-backend-config
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always

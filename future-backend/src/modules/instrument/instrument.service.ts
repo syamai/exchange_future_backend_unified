@@ -124,6 +124,16 @@ export class InstrumentService {
     if (!isTesting) {
       instruments = instruments.filter(i => i.symbol !== 'LTCUSDT');
     }
+
+    // Ensure minPriceMovement has a valid value (use tickSize as fallback)
+    instruments = instruments.map(instrument => {
+      const minPriceMovement = Number(instrument.minPriceMovement);
+      if (!minPriceMovement || minPriceMovement <= 0) {
+        instrument.minPriceMovement = instrument.tickSize || "0.01";
+      }
+      return instrument;
+    });
+
     return instruments;
   }
 

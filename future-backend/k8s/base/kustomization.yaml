@@ -9,6 +9,8 @@ resources:
   - service.yaml
   - future-event-v2-consumers.yaml
   - ticker-worker.yaml
+  - notify-worker.yaml
+  - orderbook-worker.yaml
   - nginx-proxy.yaml
 
 commonLabels:

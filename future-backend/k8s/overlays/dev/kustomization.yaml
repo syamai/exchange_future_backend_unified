@@ -81,6 +81,20 @@ patches:
       kind: Deployment
       name: future-ticker-worker
 
+  - patch: |
+      - op: remove
+        path: /spec/template/spec/nodeSelector
+    target:
+      kind: Deployment
+      name: future-notify-worker
+
+  - patch: |
+      - op: remove
+        path: /spec/template/spec/nodeSelector
+    target:
+      kind: Deployment
+      name: future-orderbook-worker
+
   # Update Secret with AWS RDS connection strings (critonex account)
   - patch: |
       - op: replace

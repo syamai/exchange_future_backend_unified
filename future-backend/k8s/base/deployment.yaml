@@ -18,7 +18,7 @@ spec:
       containers:
         - name: future-backend
           image: exchange/future-backend:1.0.0
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
               name: http

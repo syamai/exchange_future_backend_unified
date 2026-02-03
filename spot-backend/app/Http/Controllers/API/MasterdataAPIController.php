@@ -30,12 +30,12 @@ class MasterdataAPIController extends AppBaseController
             $result[strtoupper($coin->coin)] = [
                 'name' => $coin->name,
                 'unified_cryptoasset_id' => $coin->id,
-                'can_withdraw' => $confirmationData->is_withdraw === 1,
-                'can_deposit' => $confirmationData->is_deposit === 1,
-                'min_withdraw' => $withdrawalLimit['min_withdraw'],
-                'max_withdraw' => $withdrawalLimit['max_withdraw'],
-                'maker_fee' => BigNumber::new($feeSetting->fee_maker)->div(100)->toString(),
-                'taker_fee' => BigNumber::new($feeSetting->fee_taker)->div(100)->toString(),
+                'can_withdraw' => $confirmationData ? $confirmationData->is_withdraw === 1 : false,
+                'can_deposit' => $confirmationData ? $confirmationData->is_deposit === 1 : false,
+                'min_withdraw' => $withdrawalLimit['min_withdraw'] ?? '0',
+                'max_withdraw' => $withdrawalLimit['max_withdraw'] ?? '0',
+                'maker_fee' => $feeSetting ? BigNumber::new($feeSetting->fee_maker)->div(100)->toString() : '0',
+                'taker_fee' => $feeSetting ? BigNumber::new($feeSetting->fee_taker)->div(100)->toString() : '0',
             ];
         }
         return $this->sendResponse($result);
@@ -59,9 +59,17 @@ class MasterdataAPIController extends AppBaseController
         })
         ->values()
         ->all();
+
+        if (count($coinLimits) < 2) {
+            return [
+                'min_withdraw' => '0',
+                'max_withdraw' => '0',
+            ];
+        }
+
         return [
-            'min_withdraw' => $coinLimits[1]->limit,
-            'max_withdraw' => $coinLimits[count($coinLimits) - 1]->limit,
+            'min_withdraw' => $coinLimits[1]->limit ?? '0',
+            'max_withdraw' => $coinLimits[count($coinLimits) - 1]->limit ?? '0',
         ];
     }
 

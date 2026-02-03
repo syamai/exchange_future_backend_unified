@@ -504,6 +504,7 @@ class PriceService
                     'time' => 0,
                     'last_24h_price' => 1,
                     'volume' => 0,
+                    'quote_volume' => 0,
                     'created_at' => Utils::currentMilliseconds()
                 ];
                 if ($req && strtolower($currency) == strtolower($req)) {
@@ -598,10 +599,12 @@ class PriceService
                         ]);
 
                         $volume = null;
+                        $quoteVolume = null;
                         $last24hPrice = null;
                         $ticker24H = collect(json_decode($response->getBody()->getContents()));
                         if (!$ticker24H->isEmpty()) {
-                            $volume = BigNumber::new($ticker24H->get('quoteVolume'))->div(10)->toString() ;
+                            $volume = BigNumber::new($ticker24H->get('volume'))->div(10)->toString();
+                            $quoteVolume = BigNumber::new($ticker24H->get('quoteVolume'))->div(10)->toString();
                             $last24hPrice = $ticker24H->get('openPrice');
                         }
 
@@ -615,7 +618,8 @@ class PriceService
                             'previous_price' => $preTrade ? $preTrade->price : $dataTrades->first()->price,
                             'change' => BigNumber::new($dataTrades->first()->price)->sub($dataTrades->last()->price)->div($dataTrades->last()->price)->mul(100)->toString(),
                             'last_24h_price' => $last24hPrice ?? $dataTrades->last()->price,
-                            'volume' => $volume ?? $dataTrades->sum('quoteQty'),
+                            'volume' => $volume ?? $dataTrades->sum('qty'),
+                            'quote_volume' => $quoteVolume ?? $dataTrades->sum('quoteQty'),
                             'created_at' => Utils::currentMilliseconds(),
                         ];
 
@@ -648,6 +652,7 @@ class PriceService
             Cache::forever($keyPriceMatch, $price);
             $previousPrice = @$previousPrice->price;
             $volume = $this->get24hVolumes($currency, $coin, $loadCache);
+            $quoteVolume = $this->get24hQuoteVolume($currency, $coin, $loadCache);
             return (object)[
                 'coin' => $coin,
                 'currency' => $currency,
@@ -656,6 +661,7 @@ class PriceService
                 'change' => $change,
                 'last_24h_price' => $last24hPrice,
                 'volume' => $volume,
+                'quote_volume' => $quoteVolume,
                 'created_at' => $currentPrice->created_at,
             ];
         }
@@ -668,6 +674,7 @@ class PriceService
             'time' => 0,
             'last_24h_price' => 0,
             'volume' => 0,
+            'quote_volume' => 0,
             'created_at' => Utils::currentMilliseconds()
         ];
     }
@@ -1244,6 +1251,21 @@ class PriceService
                 //->where('created_at', '>=', Utils::previous24hInMillis())
                 //->sum('quote_volume');
                 ->sum('volume');
+            Cache::put($key, $result, PriceService::PRICE_CACHE_LIVE_TIME);
+        }
+        return $result;
+    }
+
+    private function get24hQuoteVolume($currency, $coin, $loadCache = true)
+    {
+        $key = "Transaction:$currency:$coin:24hQuoteVolume";
+        $result = null;
+        if ($loadCache && Cache::has($key)) {
+            $result = Cache::get($key);
+        } else {
+            $result = TotalPrice::where('currency', $currency)
+                ->where('coin', $coin)
+                ->sum('quote_volume');
             Cache::put($key, $result, PriceService::PRICE_CACHE_LIVE_TIME);
         }
         return $result;

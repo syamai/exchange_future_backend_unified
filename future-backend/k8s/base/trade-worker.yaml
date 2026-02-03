@@ -1,0 +1,63 @@
+---
+# Future Backend - Binance Trade Worker
+# Connects to Binance WebSocket and collects trade data to Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: future-trade-worker
+  namespace: future-backend
+  labels:
+    app: future-trade-worker
+    component: worker
+    app.kubernetes.io/name: future-backend
+    app.kubernetes.io/component: trade-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: future-trade-worker
+  template:
+    metadata:
+      labels:
+        app: future-trade-worker
+        component: worker
+        app.kubernetes.io/name: future-backend
+        app.kubernetes.io/component: trade-worker
+    spec:
+      containers:
+        - name: trade-worker
+          image: exchange/future-backend:main
+          imagePullPolicy: Always
+          command: ["node"]
+          args: ["dist/console.js", "trade:publish-binance-trade"]
+          envFrom:
+            - secretRef:
+                name: future-backend-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/local.yml
+              subPath: local.yml
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'trade:publish-binance-trade' > /dev/null"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config-volume
+          configMap:
+            name: future-backend-config
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always

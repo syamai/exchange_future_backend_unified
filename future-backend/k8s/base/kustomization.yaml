@@ -11,6 +11,7 @@ resources:
   - ticker-worker.yaml
   - notify-worker.yaml
   - orderbook-worker.yaml
+  - trade-worker.yaml
   - nginx-proxy.yaml
 
 commonLabels:

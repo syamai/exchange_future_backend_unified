@@ -95,6 +95,13 @@ patches:
       kind: Deployment
       name: future-orderbook-worker
 
+  - patch: |
+      - op: remove
+        path: /spec/template/spec/nodeSelector
+    target:
+      kind: Deployment
+      name: future-trade-worker
+
   # Update Secret with AWS RDS connection strings (critonex account)
   - patch: |
       - op: replace

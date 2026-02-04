@@ -277,6 +277,310 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: spot-fake-data-bnb
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-bnb
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-bnb
+    spec:
+      containers:
+        - name: fake-data-bnb
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt bnb; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-xrp
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-xrp
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-xrp
+    spec:
+      containers:
+        - name: fake-data-xrp
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt xrp; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-ada
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-ada
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-ada
+    spec:
+      containers:
+        - name: fake-data-ada
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt ada; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-ltc
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-ltc
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-ltc
+    spec:
+      containers:
+        - name: fake-data-ltc
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt ltc; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-bch
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-bch
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-bch
+    spec:
+      containers:
+        - name: fake-data-bch
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt bch; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-eos
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-eos
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-eos
+    spec:
+      containers:
+        - name: fake-data-eos
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt eos; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-matic
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-matic
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-matic
+    spec:
+      containers:
+        - name: fake-data-matic
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt matic; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-trx
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-trx
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-trx
+    spec:
+      containers:
+        - name: fake-data-trx
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt trx; sleep 1; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: spot-fake-data-sol
   labels:
     app: spot-backend

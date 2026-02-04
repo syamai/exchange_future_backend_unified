@@ -22,6 +22,22 @@ replicas:
     count: 1
   - name: spot-fake-data-eth
     count: 1
+  - name: spot-fake-data-bnb
+    count: 1
+  - name: spot-fake-data-xrp
+    count: 1
+  - name: spot-fake-data-ada
+    count: 1
+  - name: spot-fake-data-ltc
+    count: 1
+  - name: spot-fake-data-bch
+    count: 1
+  - name: spot-fake-data-eos
+    count: 1
+  - name: spot-fake-data-matic
+    count: 1
+  - name: spot-fake-data-trx
+    count: 1
   - name: spot-fake-data-sol
     count: 1
 

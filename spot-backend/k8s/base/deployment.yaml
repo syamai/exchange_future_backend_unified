@@ -221,7 +221,7 @@ spec:
         - name: fake-data-btc
           image: exchange/spot-backend:latest
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan spot:fake_data usdt btc"]
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt btc; sleep 1; done"]
           resources:
             requests:
               cpu: "100m"
@@ -259,7 +259,7 @@ spec:
         - name: fake-data-eth
           image: exchange/spot-backend:latest
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan spot:fake_data usdt eth"]
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt eth; sleep 1; done"]
           resources:
             requests:
               cpu: "100m"
@@ -297,7 +297,7 @@ spec:
         - name: fake-data-sol
           image: exchange/spot-backend:latest
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan spot:fake_data usdt sol"]
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && while true; do php artisan spot:fake_data usdt sol; sleep 1; done"]
           resources:
             requests:
               cpu: "100m"

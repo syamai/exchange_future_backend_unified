@@ -1101,7 +1101,7 @@ class PriceService
             ];
         }
 
-        /*$fakeDataTradeSpot = env("FAKE_DATA_TRADE_SPOT", false);
+        $fakeDataTradeSpot = env("FAKE_DATA_TRADE_SPOT", false);
         if ($fakeDataTradeSpot && isset(Consts::FAKE_CURRENCY_COINS[$coin.'_'.$currency])) {
             try {
                 $client = new Client([
@@ -1170,9 +1170,9 @@ class PriceService
             } catch (\Exception $e) {
                 Log::error("getPriceScopeIn24h:fake:error");
                 Log::error($e);
-                throw new HttpException(400, __('data.error.getData'));
+                // Don't throw exception, fallback to default behavior
             }
-        }*/
+        }
 
         $currentPrice = $this->getCurrentPrice($currency, $coin);
         $lastPrice = $this->getLast24hPrice($currency, $coin);

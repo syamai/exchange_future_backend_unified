@@ -137,3 +137,177 @@ spec:
             - name: USE_SWOOLE_MATCHING_ENGINE
               value: "true"
       terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-echo-server
+  labels:
+    app: spot-backend
+    component: echo-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: echo-server
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: echo-server
+    spec:
+      containers:
+        - name: echo-server
+          image: exchange/spot-echo-server:latest
+          imagePullPolicy: Always
+          ports:
+            - name: socketio
+              containerPort: 6001
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: LARAVEL_ECHO_SERVER_AUTH_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: spot-backend-config
+                  key: APP_URL
+            - name: LARAVEL_ECHO_SERVER_REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: spot-backend-secrets
+                  key: REDIS_HOST
+            - name: LARAVEL_ECHO_SERVER_REDIS_PORT
+              value: "6379"
+          livenessProbe:
+            tcpSocket:
+              port: 6001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 6001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      terminationGracePeriodSeconds: 30
+---
+# Spot Fake Data Workers - Fetch Binance price data and broadcast
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-btc
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-btc
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-btc
+    spec:
+      containers:
+        - name: fake-data-btc
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan spot:fake_data usdt btc"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-eth
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-eth
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-eth
+    spec:
+      containers:
+        - name: fake-data-eth
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan spot:fake_data usdt eth"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spot-fake-data-sol
+  labels:
+    app: spot-backend
+    component: fake-data-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spot-backend
+      component: fake-data-sol
+  template:
+    metadata:
+      labels:
+        app: spot-backend
+        component: fake-data-sol
+    spec:
+      containers:
+        - name: fake-data-sol
+          image: exchange/spot-backend:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "php artisan config:clear && php artisan config:cache && php artisan spot:fake_data usdt sol"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: spot-backend-config
+            - secretRef:
+                name: spot-backend-secrets
+      terminationGracePeriodSeconds: 30

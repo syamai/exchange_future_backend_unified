@@ -16,11 +16,22 @@ replicas:
     count: 2
   - name: spot-matching-engine
     count: 1
+  - name: spot-echo-server
+    count: 1
+  - name: spot-fake-data-btc
+    count: 1
+  - name: spot-fake-data-eth
+    count: 1
+  - name: spot-fake-data-sol
+    count: 1
 
 # Override images with ECR registry (critonex account)
 images:
   - name: exchange/spot-backend
     newName: 990781424619.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/spot-backend
+    newTag: main
+  - name: exchange/spot-echo-server
+    newName: 990781424619.dkr.ecr.ap-northeast-2.amazonaws.com/exchange/spot-echo-server
     newTag: main
 
 # Patch resources for dev (smaller)

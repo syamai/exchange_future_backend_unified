@@ -29,3 +29,7 @@ data:
   MATCHING_JAVA_ALLOW: "false"
   USE_STREAM_MATCHING_ENGINE: "false"
   USE_SWOOLE_MATCHING_ENGINE: "false"
+
+  # Fake Data (Binance price feed)
+  FAKE_DATA_TRADE_SPOT: "true"
+  FAKE_DATA_TIME_SLEEP_TRADE_SPOT: "500000"

@@ -6,7 +6,7 @@ import {
   Inject,
   Injectable,
 } from "@nestjs/common";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { CACHE_MANAGER } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Like, Repository, Transaction, TransactionRepository } from "typeorm";

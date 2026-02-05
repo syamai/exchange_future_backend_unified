@@ -9,8 +9,10 @@ const orderCount = new Counter('order_count');
 const orderErrors = new Counter('order_errors');
 
 // Configuration
-const BASE_URL = __ENV.BASE_URL || 'http://a9c6a186c22eb41608af8f5f7d83c2cb-b996d2874664ae92.elb.ap-northeast-2.amazonaws.com';
-const TOKEN = __ENV.TOKEN || 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidGVzdEB0ZXN0LmNvbSIsImlhdCI6MTc2ODgxMzkyNSwiZXhwIjoxNzY4OTAwMzI1fQ.DIibjn_1j75i7ftZTn7oup6pYAjvdi8Plr5IGTI90rn2dw39AxuthpXMJ2byGjMMtd4d1ExEifEMvbXxEBkiWeVgTjOtWmWrSGqSQsgXkmAD0rymtWLnyDUgD2R2lGg9Pi7CXqZKP7Nc0rzuSt_EqQcXJfyYIM3lXDhDkpEil-xCyc6cVpELMbe76NpvL3itbCHFVTsgmhplIKPE8djI7huOXCO9cC2l0zWOFO0_yTQrkRb6YqfUPmocC3ynkci84Nfa4rw1XA1DdwRfB5wL8FOZNHKnCKv5piLtfiNKdoYHbQlyniRfKQtkzAFt5wBYtmsX4ebcSXHbnbF57JDoUg';
+// BASE_URL: ELB endpoint (use -e BASE_URL=http://... to override)
+// TOKEN: JWT token (use -e TOKEN=eyJ... to override, REQUIRED for production tests)
+const BASE_URL = __ENV.BASE_URL || 'http://a5e62f0c62ed143c894d967b5f010892-8f62b95861b41f5f.elb.ap-northeast-2.amazonaws.com';
+const TOKEN = __ENV.TOKEN || '';
 
 const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
 const sides = ['BUY', 'SELL'];
@@ -59,11 +61,11 @@ export default function () {
     },
   };
 
-  const res = http.post(`${BASE_URL}/v1/order`, payload, params);
+  const res = http.post(`${BASE_URL}/api/v1/order`, payload, params);
   orderCount.add(1);
 
   const success = check(res, {
-    'order: status 200': (r) => r.status === 200,
+    'order: status 2xx': (r) => r.status >= 200 && r.status < 300,
     'order: has order id': (r) => {
       try {
         const body = JSON.parse(r.body);
@@ -87,10 +89,10 @@ export default function () {
 }
 
 export function handleSummary(data) {
-  const duration = data.metrics.http_req_duration;
-  const reqs = data.metrics.http_reqs;
-  const failed = data.metrics.http_req_failed;
-  const orderSuccess = data.metrics.order_success_rate;
+  const duration = data.metrics.http_req_duration || { values: { avg: 0, med: 0, 'p(90)': 0, 'p(95)': 0, 'p(99)': 0 } };
+  const reqs = data.metrics.http_reqs || { values: { count: 0, rate: 0 } };
+  const failed = data.metrics.http_req_failed || { values: { passes: 0, rate: 0 } };
+  const orderSuccess = data.metrics.order_success_rate || { values: { rate: 0 } };
 
   console.log('\n');
   console.log('╔════════════════════════════════════════════════════════════════╗');

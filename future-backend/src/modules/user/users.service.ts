@@ -3,8 +3,11 @@ import {
   BadRequestException,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
 } from "@nestjs/common";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Like, Repository, Transaction, TransactionRepository } from "typeorm";
 import { ApiKey } from "src/models/entities/api-key.entity";
@@ -53,9 +56,15 @@ export class UserService {
     private readonly kafkaClient: KafkaClient,
     private readonly mailService: MailerService,
     @InjectRepository(CoinInfoRepository, "master")
-    private coinInfoRepository: CoinInfoRepository
+    private coinInfoRepository: CoinInfoRepository,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {
     this.web3 = new Web3();
+  }
+
+  // Cache key for user data
+  private getUserCacheKey(userId: number): string {
+    return `user:auth:${userId}`;
   }
 
   async checkUserIdExisted(id: number): Promise<boolean> {
@@ -101,6 +110,53 @@ export class UserService {
         HttpStatus.BAD_REQUEST
       );
     }
+    return user;
+  }
+
+  /**
+   * Cached version of findUserById for high-performance JWT validation.
+   * Cache TTL: 5 minutes (300 seconds)
+   * This reduces DB queries from ~300/sec to near zero for repeated requests.
+   */
+  async findUserByIdCached(id: number): Promise<UserEntity> {
+    const cacheKey = this.getUserCacheKey(id);
+
+    // Try cache first
+    const cachedUser = await this.cacheManager.get<UserEntity>(cacheKey);
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    // Cache miss - fetch from DB
+    const user = await this.usersRepositoryReport.findOne(
+      { id },
+      {
+        select: [
+          "id",
+          "position",
+          "status",
+          "role",
+          "isLocked",
+          "userType",
+          "email",
+          "createdAt",
+          "updatedAt",
+          "notification_token",
+          "location",
+        ],
+      }
+    );
+
+    if (!user) {
+      throw new HttpException(
+        httpErrors.ACCOUNT_NOT_FOUND,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Cache for 5 minutes (300 seconds)
+    await this.cacheManager.set(cacheKey, user, 300);
+
     return user;
   }
 

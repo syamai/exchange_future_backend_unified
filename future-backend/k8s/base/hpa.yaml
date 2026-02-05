@@ -7,22 +7,26 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dev-future-backend
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 3 # Increased from 2 for high availability
+  maxReplicas: 15 # Increased from 5 to support 2000 TPS
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 60 # Reduced from 70 for faster scale-up
   behavior:
     scaleUp:
-      stabilizationWindowSeconds: 30
+      stabilizationWindowSeconds: 15 # Reduced from 30 for faster response
       policies:
       - type: Pods
-        value: 2
-        periodSeconds: 30
+        value: 4 # Increased from 2 for aggressive scale-up
+        periodSeconds: 15
+      - type: Percent
+        value: 100 # Allow 100% increase
+        periodSeconds: 15
+      selectPolicy: Max
     scaleDown:
       stabilizationWindowSeconds: 300
       policies:

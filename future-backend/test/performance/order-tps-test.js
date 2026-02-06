@@ -14,6 +14,7 @@ const orderErrors = new Counter('order_errors');
 const BASE_URL = __ENV.BASE_URL || 'http://a5e62f0c62ed143c894d967b5f010892-8f62b95861b41f5f.elb.ap-northeast-2.amazonaws.com';
 const TOKEN = __ENV.TOKEN || '';
 
+// All major pairs now have lotSize=0.001, tickSize=0.01
 const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
 const sides = ['BUY', 'SELL'];
 
@@ -37,6 +38,7 @@ export const options = {
 export default function () {
   const symbol = symbols[Math.floor(Math.random() * symbols.length)];
   const side = sides[Math.floor(Math.random() * sides.length)];
+  // All pairs now use tickSize=0.01 (2 decimal places)
   const price = symbol === 'BTCUSDT' ? (95000 + Math.random() * 1000).toFixed(2) :
                 symbol === 'ETHUSDT' ? (3200 + Math.random() * 100).toFixed(2) :
                 (180 + Math.random() * 10).toFixed(2);

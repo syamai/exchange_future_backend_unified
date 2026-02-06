@@ -67,7 +67,7 @@ import { FundingService } from "../funding/funding.service";
 import * as lodash from "lodash";
 import { RedisClient } from "src/shares/redis-client/redis-client";
 const INSTRUMENT_CACHE_PREFIX = 'instrument:';
-const INSTRUMENT_CACHE_TTL = 60 * 60; // 1 hour in seconds
+const INSTRUMENT_CACHE_TTL = 5 * 60; // 5 minutes in seconds
 
 @Injectable()
 export class InstrumentService {
@@ -740,7 +740,7 @@ export class InstrumentService {
     results.forEach((result) => {
       symbols.push(result.symbol);
     });
-    await this.cacheManager.set(INSTRUMENT_SYMBOL_CACHE, symbols);
+    await this.cacheManager.set(INSTRUMENT_SYMBOL_CACHE, symbols, { ttl: INSTRUMENT_CACHE_TTL });
     return symbols;
   }
 
@@ -761,7 +761,7 @@ export class InstrumentService {
         name: result.name,
       });
     });
-    await this.cacheManager.set(INSTRUMENT_CACHE, data);
+    await this.cacheManager.set(INSTRUMENT_CACHE, data, { ttl: INSTRUMENT_CACHE_TTL });
     return data;
   }
 
@@ -780,7 +780,7 @@ export class InstrumentService {
     results.forEach((result) => {
       symbols.push(result.symbol);
     });
-    await this.cacheManager.set(INSTRUMENT_SYMBOL_COIN_M_CACHE, symbols);
+    await this.cacheManager.set(INSTRUMENT_SYMBOL_COIN_M_CACHE, symbols, { ttl: INSTRUMENT_CACHE_TTL });
     return symbols;
   }
 

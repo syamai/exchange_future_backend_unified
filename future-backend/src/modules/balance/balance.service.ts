@@ -170,7 +170,7 @@ export class BalanceService {
     accountId: number,
     asset: string
   ) {
-    const position = await this.positionService.calPositionMarginForAcc(
+    const position = await this.positionService.calPositionMarginForAccCached(
       accountId,
       asset
     );

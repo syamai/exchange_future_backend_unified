@@ -1357,6 +1357,37 @@ SELECT pSl.*
     };
   }
 
+  /**
+   * Cached version of calPositionMarginForAcc
+   * TTL: 3 seconds (short TTL due to frequently changing position data)
+   */
+  async calPositionMarginForAccCached(
+    accountId: number,
+    asset: string
+  ): Promise<{
+    positionMargin: string;
+    unrealizedPNL: string;
+    positionMarginCross: string;
+    positionMarginIsIsolate: string;
+  }> {
+    const cacheKey = `positionMargin:${accountId}:${asset}`;
+
+    const cached = await this.cacheManager.get<{
+      positionMargin: string;
+      unrealizedPNL: string;
+      positionMarginCross: string;
+      positionMarginIsIsolate: string;
+    }>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const result = await this.calPositionMarginForAcc(accountId, asset);
+    await this.cacheManager.set(cacheKey, result, 3); // 3 seconds TTL
+    return result;
+  }
+
   async calPositionMarginIsIsolate(symbols: any, accountId: number, asset: string) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore

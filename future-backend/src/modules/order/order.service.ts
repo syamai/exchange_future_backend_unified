@@ -1061,7 +1061,7 @@ export class OrderService extends BaseEngineService {
 
     let orderCost = null;
     if (isHasPosition) {
-      const positionMargin = new BigNumber((await this.positionService.calPositionMarginForAcc(accountId, USDT)).positionMargin);
+      const positionMargin = new BigNumber((await this.positionService.calPositionMarginForAccCached(accountId, USDT)).positionMargin);
       const positionSize = positionCurrentQty.abs();
       orderCost = this.calculateOrderCostWithPosition({
         isLongPosition,

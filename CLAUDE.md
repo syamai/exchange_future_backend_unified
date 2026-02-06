@@ -234,474 +234,106 @@ kubectl apply -k spot-backend/k8s/overlays/dev
 
 ---
 
-## 2026-01-20 인프라 비용 최적화 작업 기록
+## AWS 계정 정보
 
-### 완료된 작업
-
-1. **스케줄러 시간 변경**
-   - 이전: 09:00-21:00 KST (12시간)
-   - 이후: 11:00-20:00 KST (9시간)
-   - 절감: ~$21/월
-
-2. **NAT Gateway → NAT Instance 교체**
-   - NAT Instance ID: `i-06d5bb3c9d01f720d`
-   - 절감: ~$37/월
-
-3. **ElastiCache Redis 삭제/재생성 추가**
-   - 매일 20:00 KST에 삭제, 11:00 KST에 재생성
-   - 절감: ~$33/월
-
-4. **스케줄러 관리 대상 리소스**
-   ```
-   EKS: exchange-dev (노드 스케일 업/다운)
-   RDS: exchange-dev-mysql (시작/중지)
-   Kafka: i-044548ca3fe3ae1a1 (시작/중지)
-   NAT: i-06d5bb3c9d01f720d (시작/중지)
-   Redis: exchange-dev-redis (삭제/재생성)
-   ```
-
-### 진행 중인 작업 (확인 필요)
-
-**RDS 다운그레이드**
-- 변경: `db.r6g.xlarge` → `db.t3.large`
-- 상태: `modifying` (진행 중이었음)
-- 예상 절감: ~$200/월
-
-확인 명령어:
-```bash
-aws rds describe-db-instances --db-instance-identifier exchange-dev-mysql \
-  --region ap-northeast-2 \
-  --query 'DBInstances[0].{Status:DBInstanceStatus,Class:DBInstanceClass}' \
-  --output table
-```
-
-완료 시 예상 결과:
-```
-| Status    | Class        |
-| available | db.t3.large  |
-```
-
-### 수동 시작/종료 명령어
-
-**전체 시작 (매칭 엔진 초기화 포함):**
-```bash
-aws lambda invoke --function-name exchange-dev-dev-scheduler \
-  --payload '{"action":"scale-up","clusterName":"exchange-dev","nodegroupName":"exchange-dev-spot-nodes","desiredSize":3,"minSize":2,"maxSize":6,"rdsInstanceId":"exchange-dev-mysql","ec2InstanceIds":["i-044548ca3fe3ae1a1","i-06d5bb3c9d01f720d"],"elasticache":{"clusterId":"exchange-dev-redis","nodeType":"cache.t3.medium","engine":"redis","engineVersion":"7.0","subnetGroupName":"exchange-dev-redis-subnet","securityGroupName":"exchange-dev-redis-sg"},"matchingEngineInit":{"kafkaInstanceId":"i-044548ca3fe3ae1a1","preloadTopic":"matching_engine_preload","delaySeconds":420}}' \
-  --cli-binary-format raw-in-base64-out \
-  --region ap-northeast-2 /dev/stdout
-```
-
-**전체 종료:**
-```bash
-aws lambda invoke --function-name exchange-dev-dev-scheduler \
-  --payload '{"action":"scale-down","clusterName":"exchange-dev","nodegroupName":"exchange-dev-spot-nodes","desiredSize":0,"minSize":0,"maxSize":6,"rdsInstanceId":"exchange-dev-mysql","ec2InstanceIds":["i-044548ca3fe3ae1a1","i-06d5bb3c9d01f720d"],"elasticache":{"clusterId":"exchange-dev-redis","nodeType":"cache.t3.medium","engine":"redis","engineVersion":"7.0","subnetGroupName":"exchange-dev-redis-subnet","securityGroupName":"exchange-dev-redis-sg"}}' \
-  --cli-binary-format raw-in-base64-out \
-  --region ap-northeast-2 /dev/stdout
-```
-
-**인프라만 시작 (매칭 엔진 초기화 없이):**
-```bash
-aws lambda invoke --function-name exchange-dev-dev-scheduler \
-  --payload '{"action":"scale-up","clusterName":"exchange-dev","nodegroupName":"exchange-dev-spot-nodes","desiredSize":3,"minSize":2,"maxSize":6,"rdsInstanceId":"exchange-dev-mysql","ec2InstanceIds":["i-044548ca3fe3ae1a1","i-06d5bb3c9d01f720d"],"elasticache":{"clusterId":"exchange-dev-redis","nodeType":"cache.t3.medium","engine":"redis","engineVersion":"7.0","subnetGroupName":"exchange-dev-redis-subnet","securityGroupName":"exchange-dev-redis-sg"}}' \
-  --cli-binary-format raw-in-base64-out \
-  --region ap-northeast-2 /dev/stdout
-```
-
-### 비용 요약
-
-| 항목 | 이전 | 이후 | 절감 |
-|------|------|------|------|
-| RDS (db.t3.large) | $248 | $75 | $173 |
-| NAT Instance | $45 | $3 | $42 |
-| Redis (9시간) | $50 | $13 | $37 |
-| EKS 노드 (9시간) | $90 | $23 | $67 |
-| Kafka (9시간) | $30 | $8 | $22 |
-| **예상 총 월 비용** | **~$472** | **~$150** | **~$322** |
-
-*참고: EKS Control Plane ($72), ELB ($20), Storage ($20) 등 고정 비용 별도*
+- **Account**: 990781424619 (critonex)
+- **User**: Prod-ahn
+- **Region**: ap-northeast-2 (서울)
 
 ---
 
-## 개발 환경 시작/중지 스크립트 (2026-01-22)
+## Future Backend TPS 테스트 결과 (2026-02-05)
 
-매일 스케일 업/다운 시 수동 설정 없이 바로 테스트 가능하도록 자동화 스크립트 추가.
+### 테스트 환경
 
-### 스크립트 위치
+- **서버**: `f-api.borntobit.com` (exchange-cicd-dev EKS)
+- **도구**: k6 부하 테스트
+- **최대 VU**: 400
+- **테스트 시간**: 약 3분
 
-```
-future-backend/scripts/
-├── dev-environment-start.sh   # 전체 시작 (인프라 + 매칭 엔진 초기화)
-├── dev-environment-stop.sh    # 전체 종료
-└── dev-environment-status.sh  # 상태 확인
-```
+### JWT ConfigMap 수정
 
-### 사용법
+기존 ConfigMap의 JWT 키가 잘못된 형식으로 저장되어 있어서 수정함.
 
+**문제**: `auth.module.ts`가 base64 인코딩된 PEM 키를 기대하지만, PEM 문자열이 직접 저장됨
+
+**해결**:
 ```bash
-cd future-backend
-
-# 개발 환경 시작 (약 5-10분 소요)
-./scripts/dev-environment-start.sh
-
-# 상태 확인
-./scripts/dev-environment-status.sh
-
-# 개발 환경 종료
-./scripts/dev-environment-stop.sh
+# PEM 키를 base64로 인코딩 후 ConfigMap 업데이트
+cat private.pem | base64 > private_b64.txt
+kubectl apply -f updated-configmap.yaml
 ```
 
-### 시작 스크립트가 하는 일
+### TPS 테스트 결과 비교
 
-1. AWS Lambda로 인프라 스케일 업 (EKS, RDS, Kafka, NAT, Redis)
-2. 각 컴포넌트가 Ready 상태가 될 때까지 대기
-3. Kafka preload 토픽 초기화 (consumer group, 토픽 리셋)
-4. 매칭 엔진 초기화 명령 전송 (INITIALIZE_ENGINE, UPDATE_INSTRUMENT, START_ENGINE)
-5. 헬스체크로 전체 시스템 정상 동작 확인
-
-### 자동 스케줄링 (2026-01-22 추가)
-
-**Lambda 스케줄러가 매칭 엔진 초기화까지 자동으로 수행합니다.**
-
-매일 11:00 KST 스케일 업 시:
-1. 인프라 스케일 업 시작 (EKS, RDS, Kafka, Redis, NAT)
-2. 3분 대기 (인프라 준비 시간)
-3. Kafka preload 토픽 리셋 (consumer group 삭제, 토픽 재생성)
-4. 매칭 엔진 초기화 명령 자동 전송
-
-**배포 필요:**
-```bash
-cd infra
-cdk deploy Exchange-dev-EksScheduler -c env=dev
-```
-
-### 주의사항
-
-- **샤딩 모드는 현재 비활성화** 상태 (legacy single topic 모드 사용)
-- 매칭 엔진 초기화 시 DB에서 데이터를 로드하지 않고 빈 상태로 시작
-- 실제 운영 데이터 테스트가 필요하면 Backend에서 `yarn console matching-engine:load` 실행 필요
-
----
-
-## Spot Backend 로컬 테스트 환경 설정 (2026-01-24)
-
-### Docker 컨테이너 (기존 사용)
-
-```bash
-# 이미 실행 중인 컨테이너 사용
-spot-mysql: 127.0.0.1:3307 (root/root, DB: spot_backend)
-spot-redis: 127.0.0.1:6380
-```
-
-### 환경 설정
-
-```bash
-cd spot-backend
-cp .env.testing .env   # 테스트용 환경변수 복사
-```
-
-`.env.testing` 주요 설정:
-```
-DB_HOST=127.0.0.1
-DB_PORT=3307
-DB_DATABASE=spot_backend
-REDIS_PORT=6380
-PROMETHEUS_ENABLED=false
-```
-
-### 수정된 파일들
-
-1. **`app/Providers/PrometheusServiceProvider.php`**
-   - `PROMETHEUS_ENABLED=false`일 때 InMemory adapter 사용
-   - Redis 연결 오류 방지
-
-2. **`tests/Feature/BaseTestCase.php`**
-   - `insertOrIgnore()` 사용하여 중복 ID 오류 방지
-   - `countries` 테이블 스킵 (corrupted data)
-   - `ensureTestCoinSettings()` 추가 (BTC/USD 쌍 생성)
-
-3. **`tests/Feature/OrderMatching/OrdersMatchingTestBase.php`**
-   - `Passport::actingAs()` 사용하여 API 인증
-   - `HmacTokenMiddleware` 비활성화
-   - `ProcessOrder` Job import 추가 (진행 중)
-
-4. **`database/seeders/UsersTableSeeder.php`**
-   - `createAccountProfileSettings()` 추가
-   - `spot_trade_allow = 1` 설정
-
-### 테스트 실행
-
-```bash
-cd spot-backend
-
-# 단위 테스트 (모두 통과)
-php artisan test --filter=HeapOrderBook
-php artisan test --filter=CircuitBreaker
-php artisan test --filter=RetryPolicy
-
-# OrderBook 통합 테스트 (모두 통과)
-php artisan test tests/Feature/OrderBook/
-
-# OrderMatching 통합 테스트 (진행 중)
-php artisan test --filter=OrdersMatching001Test
-```
-
-### 알려진 이슈
-
-1. **Redis Stream 미지원**
-   - `matching-engine:stream` 명령 실행 시 "XGROUP is not a registered Redis command" 오류
-   - 원인: predis 라이브러리가 Redis Stream 명령어(XGROUP, XREAD 등) 미지원
-   - 해결: phpredis 확장 설치 필요 (pecl install redis)
-
-2. **OrderMatching 테스트 매칭 미실행**
-   - `order:process` 명령이 큐에 Job 추가만 함
-   - `ProcessOrder` Job이 비동기로 실행되어 테스트 중 매칭 안됨
-   - 해결 필요: `ProcessOrder::dispatchSync()` 또는 직접 실행
-
-### 거래 권한 체크 흐름
-
-`OrderAPIController::store()` → `EnableTradingSettingService::checkAllowTrading()`:
-1. `account_profile_settings.spot_trade_allow` 체크
-2. `enable_trading_settings` 테이블에서 사용자별 쌍 권한 체크
-3. `coin_settings.is_enable` 체크
-
-### 테스트용 필수 데이터
-
-- `coin_settings`: BTC/USD 쌍 (`is_enable = 1`)
-- `account_profile_settings`: 사용자별 `spot_trade_allow = 1`
-- `fee_levels`: 수수료 레벨 설정
-
----
-
-## Spot Backend OrderMatching 통합 테스트 완료 (2026-01-23~24)
-
-### 완료된 작업
-
-1. **ProcessOrder 동기 실행 구현**
-   - 테스트 환경에서 큐 없이 직접 실행
-   - `ProcessOrderRequest` → `ProcessOrder` 동기 호출
-
-2. **테스트 데이터 확장**
-   - `market_fee_setting` 자동 생성
-   - `coin_settings` BTC/USD 쌍 생성
-
-3. **15개 테스트 케이스 모두 통과**
-   - OrdersMatching001~008 테스트 수정
-   - 예상 결과값 매칭 로직과 일치하도록 수정
-
-### Git Commit
-
-```
-e6a9569 fix(spot-backend): enable OrderMatching integration tests to run synchronously
-```
-
-### 테스트 실행
-
-```bash
-cd spot-backend
-php artisan test tests/Feature/OrderMatching/  # 15개 테스트 모두 통과
-```
-
----
-
-## Spot Backend 5,000 TPS 성능 최적화 프로젝트 (2026-01-24~25)
-
-### 벤치마크 결과
-
-| 벤치마크 | 결과 |
-|----------|------|
-| InMemory Matching TPS | **27,424 TPS** |
-| Heap OrderBook Insert | **3,521,127/sec** |
-| Heap vs Array Speedup | **456x** |
-| 현재 Production TPS | ~200 TPS (DB 병목) |
+| 지표 | 1 Pod | 5 Pods | 개선율 |
+|------|-------|--------|--------|
+| **TPS** | 73 | **357** | **+388%** |
+| 총 주문 | 13,734 | 57,146 | +316% |
+| Median RT | 1,942ms | 154ms | **-92%** |
+| P95 RT | 4,021ms | 1,454ms | -64% |
+| HTTP 실패 | 0.07% | 39.74% | ⚠️ |
 
 ### 핵심 발견
 
-1. **Future는 이미 최적화 완료**
-   - 심볼 기반 샤딩 구현됨 (3 shards)
-   - 비동기 배치 DB 쓰기 (`saveAccountsV2`, `savePositionsV2`)
-   - Redis 캐싱 레이어 적용
+1. **Pod 스케일링 효과**: 5배 Pod → 4.9배 TPS (거의 선형 확장)
+2. **응답 시간 대폭 개선**: median 154ms (92% 감소)
+3. **병목 발견**: 고부하 시 39% 실패 → DB 연결 풀 부족 추정
 
-2. **Spot의 DB 동기 쓰기가 99% 병목**
-   - 순수 매칭: 27,424 TPS (충분)
-   - DB 쓰기: 5-10ms/order → 최대 200 TPS
-
-3. **공유 인프라 분리 불필요**
-   - DB 인덱스 분리로 충분 (future_db, spot_db)
-   - RDS IOPS 증설 필요 (3K → 10K)
-
-### 구현 로드맵 (6주)
+### 2000 TPS 달성 예측
 
 ```
-Week 1    Phase 2: DB Batch Write (Spot)     → 2,000 TPS
-Week 2-3  Phase 3: Redis Stream + Sharding   → 3,500 TPS
-Week 4-5  Phase 4: Swoole Migration          → 5,000 TPS
-Week 6    Phase 5: Infrastructure Upgrade    → 안정화
+현재: 5 Pods = 357 TPS
+필요: 2000 TPS / 357 TPS * 5 Pods ≈ 28 Pods
+
+단, 추가 인프라 업그레이드 필수:
+- RDS: db.r6g.xlarge + connection pool 증가
+- Redis: cache.r6g.large
+- Matching Engine 샤딩 활성화 (sharding.enabled: true)
 ```
 
-### 비용 분석
+### 권장 아키텍처 (2000 TPS)
 
-| 환경 | 월 비용 | TPS | 비용/M 트랜잭션 |
-|------|---------|-----|-----------------|
-| 현재 (Dev) | ~$214 | 200 | $0.41 |
-| 목표 (Prod) | ~$1,406 | 5,000 | $0.11 (73% 절감) |
+| 리소스 | 수량 | 월 비용 |
+|--------|------|---------|
+| Backend Pods (t3.large) | 10개 | ~$600 |
+| Matching Engine (t3.large) | 6개 (3 shards × 2) | ~$360 |
+| RDS r6g.xlarge | 1+1 (Read Replica) | ~$500 |
+| Redis r6g.large | 1 | ~$200 |
+| Kafka (t3.medium x3) | 3 | ~$150 |
+| **Total** | | **~$1,800/월** |
 
-### 관련 문서
+### 스케일 업/다운 명령어
 
-- `spot-backend/docs/plans/5000-tps-infrastructure-plan.md` - Spot 인프라 계획
-- `docs/plans/2026-01-24-5000-tps-architecture-review.md` - Spot+Future 종합 아키텍처 검토
-- `docs/plans/2026-01-25-spot-performance-optimization-progress.md` - 진행 현황
-
-### Git Commits
-
-```
-23fb269 docs(spot-backend): add 5000 TPS infrastructure plan
-```
-
-### 다음 단계
-
-| 우선순위 | 작업 | 예상 효과 |
-|----------|------|-----------|
-| **1** | Spot WriteBuffer 클래스 구현 | 200 → 2,000 TPS |
-| **2** | phpredis 확장 설치 | Redis Stream 활성화 |
-| **3** | RDS IOPS 증설 (3K → 10K) | 배치 쓰기 지원 |
-
-
-## AWS 계정 정보
-     - **Account**: 990781424619 (critonex)
-     - **User**: Prod-ahn
-     - **Region**: ap-northeast-2 (서울)
-
----
-
-## exchange-cicd-dev 인프라 정보 (2026-01-28)
-
-### Kafka (Redpanda) EC2
-- **Instance ID**: `i-06b94401e85fad898`
-- **Private IP**: `172.31.13.13`
-- **Public IP**: `52.78.109.192`
-- **Type**: t3.medium
-- **VPC**: vpc-0bd37d37ac2f47d7f (기본 VPC, 172.31.0.0/16)
-- **Security Group**: sg-042f12df0c594b833 (exchange-cicd-dev-kafka-sg)
-
-### Kafka 설정 업데이트 방법
-
-EC2 Instance Connect 사용:
 ```bash
-# 1. SSH 키 푸시
-AWS_PROFILE=critonex aws ec2-instance-connect send-ssh-public-key \
-  --region ap-northeast-2 \
-  --instance-id i-06b94401e85fad898 \
-  --instance-os-user ec2-user \
-  --ssh-public-key "$(cat ~/.ssh/id_ed25519.pub)"
+# EKS 노드 스케일 업 (테스트용)
+AWS_PROFILE=critonex aws eks update-nodegroup-config \
+  --cluster-name exchange-cicd-dev \
+  --nodegroup-name ng-spot-1 \
+  --scaling-config minSize=3,maxSize=6,desiredSize=4 \
+  --region ap-northeast-2
 
-# 2. SSH 접속 (60초 내)
-ssh ec2-user@52.78.109.192
+# Backend Pod 스케일 업
+kubectl scale deployment dev-future-backend --replicas=5 -n future-backend-dev
 
-# 3. Redpanda 상태 확인
-rpk cluster info
-rpk topic list
+# 테스트 후 원복
+kubectl scale deployment dev-future-backend --replicas=1 -n future-backend-dev
+aws eks update-nodegroup-config ... --scaling-config desiredSize=2
 ```
 
-### Kubernetes Secrets
-```bash
-# Matching Engine Kafka 설정 확인
-kubectl get secret dev-matching-engine-secrets -n matching-engine-dev \
-  -o jsonpath='{.data.KAFKA_BOOTSTRAP_SERVERS}' | base64 -d
-
-# Kafka IP 변경 시
-kubectl patch secret dev-matching-engine-secrets -n matching-engine-dev \
-  --type='json' \
-  -p='[{"op": "replace", "path": "/data/KAFKA_BOOTSTRAP_SERVERS", "value": "'$(echo -n "NEW_IP:9092" | base64)'"}]'
-
-# Matching Engine 재시작
-kubectl rollout restart statefulset -n matching-engine-dev
-```
-
-### 주의사항
-- IMDSv2 사용: 메타데이터 조회 시 토큰 필요
-- Redpanda advertised_kafka_api 설정이 private IP로 되어 있어야 함
-
----
-
-## Future Event V2 (입금 보너스 시스템) - 2026-01-30
-
-### 개요
-
-입금 시 보너스를 지급하고, 원금/보너스를 분리 관리하는 이벤트 시스템.
-- **원금**: 손실, 수수료, 펀딩비 차감 대상
-- **보너스**: 원금 소진 전까지 유지, 원금 <= 0 시 청산과 함께 삭제
-
-### 관련 파일
-
-```
-future-backend/src/
-├── models/entities/
-│   ├── event-setting-v2.entity.ts      # 이벤트 설정
-│   ├── user-bonus-v2.entity.ts         # 유저 보너스 (원금/보너스 분리)
-│   └── user-bonus-v2-history.entity.ts # 원금 변경 이력
-├── models/repositories/
-│   ├── event-setting-v2.repository.ts
-│   ├── user-bonus-v2.repository.ts
-│   └── user-bonus-v2-history.repository.ts
-├── modules/future-event-v2/
-│   ├── future-event-v2.service.ts      # 핵심 비즈니스 로직
-│   ├── future-event-v2.controller.ts   # REST API
-│   ├── future-event-v2.console.ts      # Kafka Consumer
-│   └── dto/                            # DTO 파일들
-├── migrations/
-│   └── 1769785760464-create-future-event-v2-tables.ts
-└── shares/enums/kafka.enum.ts          # Kafka 토픽 정의
-```
-
-### 배포 절차
+### k6 테스트 실행
 
 ```bash
 cd future-backend
-
-# 1. DB 마이그레이션 실행
-yarn typeorm:run
-
-# 2. Kafka 토픽 생성 (Redpanda)
-rpk topic create future_event_v2_deposit_approved
-rpk topic create future_event_v2_principal_deduction
-rpk topic create future_event_v2_liquidation_trigger
-
-# 3. Consumer 프로세스 시작 (별도 터미널 또는 PM2)
-yarn console:dev future-event-v2:process-deposit
-yarn console:dev future-event-v2:process-principal-deduction
+JWT_TOKEN=$(cat /tmp/new_jwt.txt)
+k6 run \
+  -e BASE_URL=https://f-api.borntobit.com \
+  -e TOKEN="$JWT_TOKEN" \
+  test/performance/order-tps-test.js
 ```
 
-### Kafka 토픽
+### 관련 파일
 
-| 토픽 | 용도 | Producer | Consumer |
-|------|------|----------|----------|
-| `future_event_v2_deposit_approved` | 입금 트랜잭션 처리 | 입금 서비스 | FutureEventV2Console |
-| `future_event_v2_principal_deduction` | 원금 차감 (손실/수수료) | 매칭 엔진 | FutureEventV2Console |
-| `future_event_v2_liquidation_trigger` | 청산 트리거 | FutureEventV2Service | 매칭 엔진 |
-
-### API 엔드포인트
-
-**Admin API** (`/admin/future-event-v2`):
-- `POST /event-settings` - 이벤트 생성
-- `PUT /event-settings/:id` - 이벤트 수정
-- `POST /event-settings/:id/toggle` - 이벤트 온/오프
-- `GET /event-settings` - 이벤트 목록
-- `GET /bonuses` - 보너스 목록 (페이지네이션)
-- `POST /bonuses/:id/revoke` - 보너스 취소
-
-**User API** (`/future-event-v2`):
-- `GET /bonuses` - 내 보너스 목록
-- `GET /active-events` - 활성 이벤트 목록
-
-### 테스트
-
-```bash
-# 단위 테스트 실행
-yarn test -- --testPathPattern="future-event-v2"
-
-# 결과: 19개 테스트 케이스 통과
-```
-
-### 설계 문서
-
-- `docs/plans/2026-01-30-future-event-v2-design.md` - 상세 설계 문서
+- `future-backend/test/performance/order-tps-test.js` - k6 테스트 스크립트
+- `future-backend/src/modules/auth/auth.module.ts` - JWT 설정 (base64 디코딩)
+- `future-backend/src/modules/auth/strategies/jwt.strategy.ts` - JWT 검증 (`payload.sub` 사용)

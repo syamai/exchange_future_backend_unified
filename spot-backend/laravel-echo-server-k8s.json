@@ -1,0 +1,22 @@
+{
+	"authHost": "http://spot-backend-api:9000",
+	"authEndpoint": "/broadcasting/auth",
+	"clients": [
+		{
+			"appId": "9cc499882e695daa",
+			"key": "ea6fe875a7dbf5931e203dfdea97a5a6"
+		}
+	],
+	"database": "redis",
+	"databaseConfig": {
+		"redis": {
+			"host": "REDIS_HOST_PLACEHOLDER",
+			"port": "6379"
+		}
+	},
+	"devMode": false,
+	"host": null,
+	"port": "6001",
+	"protocol": "http",
+	"socketio": {}
+}

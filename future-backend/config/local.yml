@@ -1,0 +1,113 @@
+app:
+  name: "future-backend"
+  prefix: "api/v1"
+  port: 3000
+  node_env: "development"
+  jwt_access_token_secret: "dev-jwt-secret-key-change-in-production"
+  jwt_access_token_expiration_time: "86400"
+  jwt_refresh_token_expiration_time: "604800"
+  signature_ignore: true
+
+jwt_key:
+  public: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtzn rN0aO3R6WRXbDDV4P\nYERb/aqJc7TN1/st5jXUh/DNEvDOX1GLPbaCuviuVbMe3b50tNNU+y8UJ9Q4mnbb\nPCN3EdWF+EjmLg6wbF0zNtuYGHbdjishZ9o6oXegKOw5CMk3sVEv/9Pu6fIM2GVQ\nPHzIW3F3pMfLV5pY16+nyysXSkPEpaIFC1gPZNIiFifDlXXZ0YD/v74ucVg3jM59\nNo41CNoZxdw+WuA9zgpJCBJ077jPpl9Tj3LaSEpHP0CM87y5xnbrcIU+agSnzYoH\nT5f0nxlC0DUKjNF0sj/Z6fF4651ncj9/9KTfjI9OpSxJSXh54YYre2qMuakptw9K\nLwIDAQAB\n-----END PUBLIC KEY-----"
+  private: "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC3Oes3Ro7dHpZF\ndsMNXg9gRFv9qolztM3X+y3mNdSH8M0S8M5fUYs9toK6+K5Vsx7dvnS001T7LxQn\n1DiadtsS3cR1YX4SOYuDrBsXTM225gYdt2OKyFn2jqhd6Ao7DkIyTexUS//0+7p\n8gzYZVA8fMhbcXekx8tXmljXr6fLKxdKQ8SlogULWA9k0iIWJ8OVddnRgP+/vi5x\nWDeMzn02jjUI2hnF3D5a4D3OCkkIEnTvuM+mX1OPctpISkc/QIzzvLnGdutwhT5q\nBKfNigdPl/SfGULQNQqM0XSyP9np8XjrnWdyP3/0pN+Mj06lLElJeHnhhit7aoy5\nqSm3D0ovAgMBAAECggEAMZ4uK/BgFNJJKHOCW7banBu2+6k4gsx2J+R96Acw0EVu\nC5CJmnd3KRWpLl/UuiGBHNSMP0GxlDoKD8UhNPc15IHiJ1y25Gc9akCRFy9gBJ2Q\nASQDWJImgDyxPvOpvBtIULBI9CxDvthSLSlewCUjhtXV3imKmGWAk+8Y2wPXASXr\nHOIoMC9h/3iEZaAe2cqV4OkF0RKTgOWBVdZXvPOQrcvO1/8NbBrV2NBU+dOK+1DV\nTJEsHnSHAG8Re1ngyJQ7fH3e57XRHtf2swHHqj9tHyAzn3W8jlPQzIbpyuKi0RHB\nWETJbT46KmB42ExwgAAq/e29hktP+Qwc99SH0J9pxQKBgQDnzMBpZrEsKPIJ7c6n\nhzIYhVuagTT05L7DiNCYn7Zfe0J71F0O6rl54m5PsKYeUCsEaz8KCB9FjdgS+Cb5\npy42GbdXIiPS1D1za6XQjst2J76kVLIGyMWdBxTHf/xCNyF60N6WKDbErrvH+eet\nGge5YkDNlGS5zCiobvXeKRIQ7QKBgQDKWvSF+UTlggrNYyhteCt0eSLteXk4E63O\nqecnU+wtUcI2SIS5g3sw1TilYGwGGLA4er8onLRljK2VC2oA0AvCvoIb3AAObKY5\nBk++Nfrr2XCCI72AGP/AQbyOeZSC8EZGeODSFQWH1WWb5In6HlJLmfpPxj+1zn/w\nVk4RkqjQCwKBgQCOQHZYeMAEBMC83Sb0YqCYscaMo/x2yaZUYzL4ZxNJt2AOlD3j\nuKLIrO/bkeHwOmyb0qEmK+PdEHZo9ccdcL6ITvHX1Ei9yqhHm+lveyJbyXpSaPOz\n/CRiAIV9BQsvK5wtPd9LsTQjMcRlrfTCo3XYC/cO8qF58FOHQkk65GOE5QKBgQCc\nsSm/xHHxNm2e9TWM7wzXOCYvtWyEW9iuuynfbkDoJvM4jZcZABMYkUM37B456kwq\nsAHuNMoMCI8xZpFC59bzigm+APGaOc/NQHHnXG1czBcu7vYCh1kjSsPzn3m8msoA\nL/IHO3f44um3eZTONUSMfkMyGtWitrCjLnFtch9+WQKBgQC2H4cavzzguiRJgkAY\nOGZJVw516ExFnkVlINYdFQe55xY8WwTsb3q1rk51TNK/s3TdAD0caopYHKKmb0Jv\nfL9AJLtkTZiaOSxo0i0zJS4ChUbEwuEYWEAlz2uPJiMT18e20cxbVGpI0h0skvAy\nSwLqTJ70ZXjNaDOuJnFnskTiMw==\n-----END PRIVATE KEY-----"
+
+secret:
+  key: "dev-secret-key"
+
+_master:
+  type: "mysql"
+  host: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
+  port: 3306
+  username: "admin"
+  password: "ExchangeDevPass2026"
+  database: "future_exchange"
+  logging: false
+
+report:
+  type: "mysql"
+  host: "exchange-cicd-dev-mysql.cv882g4ue5py.ap-northeast-2.rds.amazonaws.com"
+  port: 3306
+  username: "admin"
+  password: "ExchangeDevPass2026"
+  database: "future_exchange"
+  logging: false
+
+redis:
+  host: "exchange-cicd-dev-redis.pyibmf.0001.apn2.cache.amazonaws.com"
+  port: 6379
+
+kafka:
+  brokers: "172.31.13.13:9092"
+
+mail:
+  enable: "false"
+  service: "gmail"
+  domain: "smtp.gmail.com"
+  port: "465"
+  account: ""
+  password: ""
+  from_address: ""
+  from_name: "Future Exchange"
+
+insurance_account:
+  user_id: 1
+
+insurance:
+  account_id: "1"
+
+matching:
+  funding_history_time: 28800000
+  position_history_time: 86400000
+
+indices:
+  interval: 5000
+
+health:
+  namespace: "future-backend-dev"
+  rpc_host: ""
+
+coin_info:
+  coingeckoUrl: "https://api.coingecko.com/api/v3"
+
+dex:
+  block_confirm: 12
+  action_batch_size: 100
+  block_time_in_ms: 3000
+  chain_id: 1
+  max_in_progress_action: 1000
+  start_block: 0
+  address: ""
+  collateral_decimal: "6"
+  default_scale: "8"
+  matcher_private_key: ""
+  rpc_host: ""
+  running_chain: ""
+  withdrawer_private_key: ""
+
+sol_dex:
+  id: "1"
+  action_batch_size: 100
+  block_time_in_ms: 400
+  max_in_progress_action: 1000
+  usdc_id: "11111111111111111111111111111111"
+  collateral_decimal: "6"
+  default_scale: "8"
+  matcher_private_key: "5MaiiCavjCmn9Hs1o3eznqDEhRwxo7pXiAYez7keQUviUkauRiTMD8DrESdrNjN8zd9mTmVhRvBJeg5vhyvgrAhG"
+  program_id: "11111111111111111111111111111111"
+  rpc_host: "https://api.devnet.solana.com"
+
+sharding:
+  enabled: true
+  shard1:
+    symbols: "BTCUSDT,BTCBUSD,BTCUSDC"
+    inputTopic: "matching-engine-shard-1-input"
+    outputTopic: "matching-engine-shard-1-output"
+  shard2:
+    symbols: "ETHUSDT,ETHBUSD,ETHUSDC"
+    inputTopic: "matching-engine-shard-2-input"
+    outputTopic: "matching-engine-shard-2-output"
+  shard3:
+    symbols: ""
+    inputTopic: "matching-engine-shard-3-input"
+    outputTopic: "matching-engine-shard-3-output"

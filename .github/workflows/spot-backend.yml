@@ -26,6 +26,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: exchange/spot-backend
+  ECR_REPOSITORY_ECHO: exchange/spot-echo-server
   K8S_NAMESPACE_DEV: spot-backend-dev
   K8S_NAMESPACE_PROD: spot-backend-prod
 
@@ -161,6 +162,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Docker metadata (Echo Server)
+        id: meta-echo
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_ECHO }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Echo Server Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: spot-backend
+          file: spot-backend/Dockerfile_echo_server
+          push: true
+          tags: ${{ steps.meta-echo.outputs.tags }}
+          labels: ${{ steps.meta-echo.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy-dev:
     name: Deploy to Dev
     runs-on: ubuntu-latest
@@ -197,9 +220,11 @@ jobs:
           # Set image tag
           cd spot-backend/k8s/overlays/dev
 
-          # Update kustomization with new image
+          # Update kustomization with new images
           kustomize edit set image \
             exchange/spot-backend=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ needs.build.outputs.image_tag }}
+          kustomize edit set image \
+            exchange/spot-echo-server=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_ECHO }}:${{ needs.build.outputs.image_tag }}
 
           # Apply manifests (server-side apply handles existing resources)
           kubectl apply -k . --server-side --force-conflicts
@@ -210,6 +235,10 @@ jobs:
             --timeout=300s
 
           kubectl rollout status deployment/spot-backend-worker-dev \
+            -n ${{ env.K8S_NAMESPACE_DEV }} \
+            --timeout=300s
+
+          kubectl rollout status deployment/spot-echo-server-dev \
             -n ${{ env.K8S_NAMESPACE_DEV }} \
             --timeout=300s
 

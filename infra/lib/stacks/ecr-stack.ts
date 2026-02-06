@@ -11,6 +11,7 @@ export class EcrStack extends cdk.Stack {
   public readonly matchingEngineRepo: ecr.Repository;
   public readonly backendRepo: ecr.Repository;
   public readonly spotBackendRepo: ecr.Repository;
+  public readonly spotEchoServerRepo: ecr.Repository;
 
   constructor(scope: Construct, id: string, props: EcrStackProps) {
     super(scope, id, props);
@@ -69,6 +70,23 @@ export class EcrStack extends cdk.Stack {
       ],
     });
 
+    // Spot Echo Server Repository (Laravel Echo Server for socket.io)
+    this.spotEchoServerRepo = new ecr.Repository(this, 'SpotEchoServerRepo', {
+      repositoryName: 'exchange/spot-echo-server',
+      imageScanOnPush: true,
+      imageTagMutability: ecr.TagMutability.MUTABLE,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      emptyOnDelete: true,
+
+      lifecycleRules: [
+        {
+          description: 'Keep last 10 images',
+          maxImageCount: 10,
+          rulePriority: 1,
+        },
+      ],
+    });
+
     // Outputs
     new cdk.CfnOutput(this, 'MatchingEngineRepoUri', {
       value: this.matchingEngineRepo.repositoryUri,
@@ -98,6 +116,16 @@ export class EcrStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'SpotBackendRepoName', {
       value: this.spotBackendRepo.repositoryName,
       exportName: `${config.envName}-SpotBackendRepoName`,
+    });
+
+    new cdk.CfnOutput(this, 'SpotEchoServerRepoUri', {
+      value: this.spotEchoServerRepo.repositoryUri,
+      exportName: `${config.envName}-SpotEchoServerRepoUri`,
+    });
+
+    new cdk.CfnOutput(this, 'SpotEchoServerRepoName', {
+      value: this.spotEchoServerRepo.repositoryName,
+      exportName: `${config.envName}-SpotEchoServerRepoName`,
     });
 
     new cdk.CfnOutput(this, 'EcrLoginCommand', {

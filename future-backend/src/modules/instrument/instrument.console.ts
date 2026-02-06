@@ -55,6 +55,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "ETHUSDT",
@@ -89,6 +90,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 2,
+          contractType: "USD_M",
         },
         {
           name: "BNBUSDT",
@@ -123,6 +125,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "LTCUSDT",
@@ -157,6 +160,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "XRPUSDT",
@@ -191,6 +195,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "SOLUSDT",
@@ -225,6 +230,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "TRXUSDT",
@@ -259,6 +265,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "MATICUSDT",
@@ -293,6 +300,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "LINKUSDT",
@@ -327,6 +335,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "MANAUSDT",
@@ -361,6 +370,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "FILUSDT",
@@ -395,6 +405,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "ATOMUSDT",
@@ -429,6 +440,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "AAVEUSDT",
@@ -463,6 +475,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "DOGEUSDT",
@@ -497,6 +510,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "DOTUSDT",
@@ -531,6 +545,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "UNIUSDT",
@@ -565,6 +580,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "USD_M",
         },
         {
           name: "BTCUSD",
@@ -599,6 +615,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "ETHUSD",
@@ -633,6 +650,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "BNBUSD",
@@ -667,6 +685,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "LTCUSD",
@@ -701,6 +720,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "XRPUSD",
@@ -735,6 +755,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "USDTUSD",
@@ -769,6 +790,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "SOLUSD",
@@ -803,6 +825,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "TRXUSD",
@@ -837,6 +860,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "MATICUSD",
@@ -871,6 +895,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "LINKUSD",
@@ -905,6 +930,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "MANAUSD",
@@ -939,6 +965,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "FILUSD",
@@ -973,6 +1000,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "ATOMUSD",
@@ -1007,6 +1035,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "AAVEUSD",
@@ -1041,6 +1070,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "DOGEUSD",
@@ -1075,6 +1105,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "DOTUSD",
@@ -1109,6 +1140,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
         {
           name: "UNIUSD",
@@ -1143,6 +1175,7 @@ export default class InstrumentSeedCommand {
           optionKoPrice: null,
           riskStep: null,
           rank: 1,
+          contractType: "COIN_M",
         },
       ])
       .execute();

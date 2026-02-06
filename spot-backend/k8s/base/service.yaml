@@ -15,3 +15,21 @@ spec:
   selector:
     app: spot-backend
     component: api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spot-echo-server
+  labels:
+    app: spot-backend
+    component: echo-server
+spec:
+  type: ClusterIP
+  ports:
+    - name: socketio
+      port: 6001
+      targetPort: 6001
+      protocol: TCP
+  selector:
+    app: spot-backend
+    component: echo-server

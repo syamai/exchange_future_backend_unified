@@ -1,0 +1,28 @@
+# Laravel Echo Server Dockerfile
+FROM node:18-alpine
+
+# Install envsubst for environment variable substitution
+RUN apk add --no-cache gettext
+
+WORKDIR /app
+
+# Install laravel-echo-server globally
+RUN npm install -g laravel-echo-server
+
+# Copy configuration template
+COPY laravel-echo-server-k8s.json /app/laravel-echo-server.template.json
+
+# Copy startup script
+COPY docker-echo-entrypoint.sh /app/docker-echo-entrypoint.sh
+RUN chmod +x /app/docker-echo-entrypoint.sh
+
+# Expose socket.io port
+EXPOSE 6001
+
+# Environment variables (can be overridden)
+ENV LARAVEL_ECHO_SERVER_REDIS_HOST=redis
+ENV LARAVEL_ECHO_SERVER_REDIS_PORT=6379
+ENV LARAVEL_ECHO_SERVER_AUTH_HOST=http://spot-backend-api:9000
+
+# Start with entrypoint script
+ENTRYPOINT ["/app/docker-echo-entrypoint.sh"]

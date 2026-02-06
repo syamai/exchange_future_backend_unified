@@ -254,6 +254,9 @@ export class SaveOrderFromClientV2UseCase {
   private async processCommand(
     command: SaveOrderFromClientCommandV2
   ): Promise<void> {
+    const timings: Record<string, number> = {};
+    const startTotal = Date.now();
+
     let stopLossOrder: OrderEntity = null;
     let takeProfitOrder: OrderEntity = null;
     let unsavedOrder = null;
@@ -262,22 +265,29 @@ export class SaveOrderFromClientV2UseCase {
     if (createOrderDto == null || userId == null || tmpOrderId == null) return;
 
     // Parallel fetch for performance optimization
+    let start = Date.now();
     const [account, instrument] = await Promise.all([
       this.getAccountByUserIdAndAsset(userId, createOrderDto.asset),
       this.instrumentService.getCachedInstrument(createOrderDto.symbol)
     ]);
+    timings['1_getAccount+Instrument'] = Date.now() - start;
     if (!account || !instrument) return;
 
+    start = Date.now();
     const marginMode = await this.userMarginModeService.getCachedMarginMode(
       account.userId,
       instrument.id
     );
+    timings['2_getMarginMode'] = Date.now() - start;
+
+    start = Date.now();
     const validatedCreateOrderDto = await this.validateOrder(
       createOrderDto,
       account,
       instrument,
       marginMode
     );
+    timings['3_validateOrder'] = Date.now() - start;
     if (!validatedCreateOrderDto) return;
     const { side, trigger, orderValue, ...body } = validatedCreateOrderDto;
 
@@ -368,27 +378,29 @@ export class SaveOrderFromClientV2UseCase {
       tpSlPromises.push(Promise.resolve(null));
     }
 
+    start = Date.now();
     [stopLossOrder, takeProfitOrder] = await Promise.all(tpSlPromises);
+    timings['4_saveTpSlOrders'] = Date.now() - start;
 
     if (unsavedOrder.type === OrderType.MARKET) {
       // Check to pre-creating orders
-      this.logger.log(`[createOrder] - Start checkAndCreateOrderForDefaultCreateOrderUserBeforeMakeMarketOrder.....`)
+      start = Date.now();
       const orderNeedCreate: CreateOrderDto[] = await this.orderService.checkAndCreateOrderForDefaultCreateOrderUserBeforeMakeMarketOrder({
         symbol: instrument.symbol,
         asset: unsavedOrder.asset,
         quantityOfMarketOrder: unsavedOrder.quantity,
         marketOrderSide: unsavedOrder.side,
       });
-      this.logger.log(`[createOrder] - End checkAndCreateOrderForDefaultCreateOrderUserBeforeMakeMarketOrder.....`)
+      timings['5a_checkDefaultOrders'] = Date.now() - start;
       // Create order
       // Push order to kafka
       // => orderbookME on cache will be updated
-      this.logger.log(`[createOrder] - Start createOrderForDefaultCreateOrderUser.....`)
+      start = Date.now();
       await this.orderService.createOrderForDefaultCreateOrderUser({
         createOrderDtos: orderNeedCreate,
         symbol: instrument.symbol,
       });
-      this.logger.log(`[createOrder] - End createOrderForDefaultCreateOrderUser.....`)
+      timings['5b_createDefaultOrders'] = Date.now() - start;
     }
 
     const newTmpOrder = {
@@ -397,12 +409,18 @@ export class SaveOrderFromClientV2UseCase {
       takeProfitOrderId: takeProfitOrder?.id ?? null,
     };
 
+    start = Date.now();
     const newOrder = await this.orderRepoMaster.save(newTmpOrder);
+    timings['6_saveMainOrder'] = Date.now() - start;
+
     this.orderService.removeEmptyValues(newOrder);
+
+    start = Date.now();
     this.orderRouter.routeCommand(newOrder.symbol, {
       code: CommandCode.PLACE_ORDER,
       data: plainToClass(OrderEntity, newOrder),
     });
+    timings['7_kafkaSend'] = Date.now() - start;
 
     if (newOrder.stopLossOrderId) {
       this.orderService.removeEmptyValues(stopLossOrder);
@@ -426,6 +444,13 @@ export class SaveOrderFromClientV2UseCase {
           parentOrderId: newOrder.id,
         }),
       });
+    }
+
+    timings['TOTAL'] = Date.now() - startTotal;
+
+    // Log timing every 100th order to avoid log spam
+    if (Math.random() < 0.01) {
+      this.logger.log(`[PROFILER] Order processing timings (ms): ${JSON.stringify(timings)}`);
     }
   }
 

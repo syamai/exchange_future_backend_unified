@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: ticker-worker
-          image: exchange/future-backend:event-v2
+          image: exchange/future-backend:main
           imagePullPolicy: Always
           command: ["node"]
           args: ["dist/console.js", "ticker:publish-binance-ticker"]

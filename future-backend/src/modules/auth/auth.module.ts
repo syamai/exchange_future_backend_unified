@@ -5,6 +5,7 @@ import { UsersModule } from "src/modules/user/users.module";
 import { AuthService } from "src/modules/auth/auth.service";
 import { JwtStrategy } from "src/modules/auth/strategies/jwt.strategy";
 import { AuthController } from "src/modules/auth/auth.controller";
+import { AuthConsole } from "src/modules/auth/auth.console";
 import * as redisStore from "cache-manager-redis-store";
 import { redisConfig } from "src/configs/redis.config";
 import { MailModule } from "src/modules/mail/mail.module";
@@ -30,7 +31,7 @@ import * as config from "config";
     }),
     MailModule,
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AuthConsole],
   exports: [AuthService],
   controllers: [AuthController],
 })

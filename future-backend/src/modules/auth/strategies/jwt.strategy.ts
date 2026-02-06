@@ -13,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private userService: UserService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: Buffer.from(config.get("jwt_key.public").toString(), "base64").toString("ascii"),
+      secretOrKey: config.get("jwt_key.public").toString(),
       algorithms: ["RS256"],
     });
   }

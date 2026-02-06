@@ -15,10 +15,7 @@ import * as config from "config";
     UsersModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
-      secretOrPrivateKey: Buffer.from(
-        config.get("jwt_key.private").toString(),
-        "base64"
-      ).toString("ascii"),
+      secretOrPrivateKey: config.get("jwt_key.private").toString(),
       signOptions: {
         expiresIn: 3600,
         algorithm: "RS256",

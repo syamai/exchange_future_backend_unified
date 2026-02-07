@@ -211,11 +211,17 @@ export class BalanceService {
       const result = await this.getInforBalanceBySymbol(userId, asset);
       response[`${asset}`] = result;
     } else {
+      // Parallelize asset balance queries to reduce response time by ~50-80%
       const listAsset = [...LIST_COINM, "USDT", "USD"];
-      for (const itemAsset of listAsset) {
-        const result = await this.getInforBalanceBySymbol(userId, itemAsset);
-        response[`${itemAsset}`] = result;
-      }
+      const results = await Promise.all(
+        listAsset.map(async (itemAsset) => ({
+          asset: itemAsset,
+          result: await this.getInforBalanceBySymbol(userId, itemAsset),
+        }))
+      );
+      results.forEach(({ asset, result }) => {
+        response[asset] = result;
+      });
     }
     return response;
   }

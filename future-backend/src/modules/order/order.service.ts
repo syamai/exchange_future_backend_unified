@@ -1327,163 +1327,162 @@ export class OrderService extends BaseEngineService {
 
     let orderCost = new BigNumber(0);
     const comparePrice = inputPrice.isGreaterThan(markPrice);
-    const compareMarBuySell = marBuy.minus(marSel);
-    switch (compareMarBuySell) {
-      case new BigNumber(1):
-        // if marBuy > marSel
-        if (comparePrice) {
-          // if inputPrice > markPrice
-          if (order.side == OrderSide.SELL) {
-            if (isCoinM) {
-              // Sell order cost = max (0,
-              // Size * Contract Multiplier / (Leverage * Input price) - MarBuy + MarSel)
-              const tempVal = size
-                .multipliedBy(multiplier)
-                .dividedBy(inputPrice.multipliedBy(leverage))
-                .minus(marBuy)
-                .plus(marSel);
-              orderCost = orderCost.isGreaterThan(tempVal)? orderCost: tempVal;
-            } else {
-              // Sell order cost = max (0; Input price * Size/ Leverage - MarBuy + MarSel)
-              const tempVal = inputPrice
-                .multipliedBy(size)
-                .dividedBy(leverage)
-                .minus(marBuy)
-                .plus(marSel);
-              orderCost = orderCost.isGreaterThan(tempVal)? orderCost: tempVal;
-            }
+    // Fix: Use comparedTo() instead of switch with BigNumber objects (objects comparison always fails)
+    const marginComparison = marBuy.comparedTo(marSel);
+
+    if (marginComparison > 0) {
+      // marBuy > marSel
+      if (comparePrice) {
+        // if inputPrice > markPrice
+        if (order.side == OrderSide.SELL) {
+          if (isCoinM) {
+            // Sell order cost = max (0,
+            // Size * Contract Multiplier / (Leverage * Input price) - MarBuy + MarSel)
+            const tempVal = size
+              .multipliedBy(multiplier)
+              .dividedBy(inputPrice.multipliedBy(leverage))
+              .minus(marBuy)
+              .plus(marSel);
+            orderCost = orderCost.isGreaterThan(tempVal) ? orderCost : tempVal;
           } else {
-            if (isCoinM) {
-              // Buy order cost = Size * Contract Multiplier * MulBuy
-              orderCost = size.multipliedBy(multiplier).multipliedBy(mulBuy);
-            } else {
-              // Buy order cost = Size * MulBuy
-              orderCost = size.multipliedBy(mulBuy);
-            }
+            // Sell order cost = max (0; Input price * Size/ Leverage - MarBuy + MarSel)
+            const tempVal = inputPrice
+              .multipliedBy(size)
+              .dividedBy(leverage)
+              .minus(marBuy)
+              .plus(marSel);
+            orderCost = orderCost.isGreaterThan(tempVal) ? orderCost : tempVal;
           }
         } else {
-          // if inputPrice < markPrice
-          if (order.side == OrderSide.SELL) {
-            if (isCoinM) {
-              // "Sell order cost = Size * Contract Multiplier * MulSel -
-              // min(Size *Contract Multiplier / (Leverage * Input price), MarBuy - MarSel)"
-              let minTempVal = marBuy.minus(marSel);
-              const tempVal = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
-              minTempVal = minTempVal.isLessThan(tempVal)? minTempVal: tempVal;
-              orderCost = size.multipliedBy(multiplier).multipliedBy(mulSell).minus(minTempVal);
-            } else {
-              // Sell order cost = Size * MulSel - min (Size * Input price/ Leverage; MarBuy)
-              const tempVal = inputPrice.multipliedBy(size).dividedBy(leverage);
-              const minTempVal = marBuy.isLessThan(tempVal)? marBuy: tempVal;
-              orderCost = size.multipliedBy(mulSell).minus(minTempVal);
-            }
+          if (isCoinM) {
+            // Buy order cost = Size * Contract Multiplier * MulBuy
+            orderCost = size.multipliedBy(multiplier).multipliedBy(mulBuy);
           } else {
-            if (isCoinM) {
-              // Buy order cost = Size *Contract Multiplier / (Leverage * Input price)
-              orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
-            } else {
-              // Buy order cost = Input price * Size/ Leverage
-              orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
-            }
+            // Buy order cost = Size * MulBuy
+            orderCost = size.multipliedBy(mulBuy);
           }
         }
-        break;
-      case new BigNumber(-1):
-        // if marBuy < marSel
-        if (comparePrice) {
-          // if inputPrice > markPrice
-          if (order.side == OrderSide.SELL) {
-            if (isCoinM) {
-              // Sell order cost = Size * Contract Multiplier / (Leverage * Input price)
-              orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
-            } else {
-              // Sell order cost = Input price * Size / Leverage
-              orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
-            }
+      } else {
+        // if inputPrice < markPrice
+        if (order.side == OrderSide.SELL) {
+          if (isCoinM) {
+            // "Sell order cost = Size * Contract Multiplier * MulSel -
+            // min(Size *Contract Multiplier / (Leverage * Input price), MarBuy - MarSel)"
+            let minTempVal = marBuy.minus(marSel);
+            const tempVal = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
+            minTempVal = minTempVal.isLessThan(tempVal) ? minTempVal : tempVal;
+            orderCost = size.multipliedBy(multiplier).multipliedBy(mulSell).minus(minTempVal);
           } else {
-            if (isCoinM) {
-              // "Buy order cost = Size * Contract Multiplier * MulBuy -
-              // min (Size * Contract Multiplier / (Leverage * Input price), MarSel - MarBuy)"
-              const tempVal = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
-              let minTempVal = marSel.minus(marBuy);
-              minTempVal = minTempVal.isLessThan(tempVal)? minTempVal: tempVal;
-              orderCost = size.multipliedBy(multiplier).multipliedBy(mulBuy).minus(minTempVal);
-            } else {
-              // Buy order cost = Size * MulBuy - min(Size * Input price/ Leverage; MarSel)
-              const tempVal = inputPrice.multipliedBy(size).dividedBy(leverage);
-              const minTempVal = marSel.isLessThan(tempVal)? marSel: tempVal;
-              orderCost = size.multipliedBy(mulBuy).minus(minTempVal);
-            }
+            // Sell order cost = Size * MulSel - min (Size * Input price/ Leverage; MarBuy)
+            const tempVal = inputPrice.multipliedBy(size).dividedBy(leverage);
+            const minTempVal = marBuy.isLessThan(tempVal) ? marBuy : tempVal;
+            orderCost = size.multipliedBy(mulSell).minus(minTempVal);
           }
         } else {
-          // if inputPrice < markPrice
-          if (order.side == OrderSide.SELL) {
-            if (isCoinM) {
-              // Sell order cost = Size * Contract Multiplier * MulSel
-              orderCost = size.multipliedBy(multiplier).multipliedBy(mulSell);
-            } else {
-              // Sell order cost = Size * MulSel
-              orderCost = size.multipliedBy(mulSell);
-            }
+          if (isCoinM) {
+            // Buy order cost = Size *Contract Multiplier / (Leverage * Input price)
+            orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
           } else {
-            if (isCoinM) {
-              // Buy order cost = max (0, Size * Contract Multiplier / (Leverage * Input price)
-              // - MarSel + MarBuy)
-              const tempVal =
-                  size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage))
-                    .minus(marSel)
-                    .plus(marBuy);
-              orderCost = orderCost.isGreaterThan(tempVal)? orderCost: tempVal;
-            } else {
-              // Buy order cost = max (0; Input price * Size/ Leverage - MarSel + MarBuy)
-              const tempVal = inputPrice.multipliedBy(size).dividedBy(leverage).minus(marSel).plus(marBuy);
-              orderCost = orderCost.isGreaterThan(tempVal)? orderCost: tempVal;
-            }
+            // Buy order cost = Input price * Size/ Leverage
+            orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
           }
         }
-        break;
-      case new BigNumber(0):
-        // if marBuy = marSel
-        if (comparePrice) {
-          // if inputPrice > markPrice
-          if (order.side == OrderSide.SELL) {
-            if (isCoinM) {
-              // Sell order cost = Size * Contract Multiplier / (Leverage * Input price)
-              orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
-            } else {
-              // Sell order cost = Input price * Size / Leverage
-              orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
-            }
+      }
+    } else if (marginComparison < 0) {
+      // marBuy < marSel
+      if (comparePrice) {
+        // if inputPrice > markPrice
+        if (order.side == OrderSide.SELL) {
+          if (isCoinM) {
+            // Sell order cost = Size * Contract Multiplier / (Leverage * Input price)
+            orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
           } else {
-            if (isCoinM) {
-              // Buy order cost = Size * Contract Multiplier * MulBuy
-              orderCost = size.multipliedBy(multiplier).multipliedBy(mulBuy);
-            } else {
-              // Buy order cost = Size * MulBuy
-              orderCost = size.multipliedBy(mulBuy);
-            }
+            // Sell order cost = Input price * Size / Leverage
+            orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
           }
         } else {
-          // if inputPrice < markPrice
-          if (order.side == OrderSide.SELL) {
-            if (isCoinM) {
-              // Sell order cost = Size * Contract Multiplier * MulSel
-              orderCost = size.multipliedBy(multiplier).multipliedBy(mulSell);
-            } else {
-              // Sell order cost = Size * MulSel
-              orderCost = size.multipliedBy(mulSell);
-            }
+          if (isCoinM) {
+            // "Buy order cost = Size * Contract Multiplier * MulBuy -
+            // min (Size * Contract Multiplier / (Leverage * Input price), MarSel - MarBuy)"
+            const tempVal = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
+            let minTempVal = marSel.minus(marBuy);
+            minTempVal = minTempVal.isLessThan(tempVal) ? minTempVal : tempVal;
+            orderCost = size.multipliedBy(multiplier).multipliedBy(mulBuy).minus(minTempVal);
           } else {
-            if (isCoinM) {
-              // Buy order cost = Size *Contract Multiplier / (Leverage * Input price)
-              orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
-            } else {
-              // Buy order cost = Input price * Size/ Leverage
-              orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
-            }
+            // Buy order cost = Size * MulBuy - min(Size * Input price/ Leverage; MarSel)
+            const tempVal = inputPrice.multipliedBy(size).dividedBy(leverage);
+            const minTempVal = marSel.isLessThan(tempVal) ? marSel : tempVal;
+            orderCost = size.multipliedBy(mulBuy).minus(minTempVal);
           }
         }
-        break;
+      } else {
+        // if inputPrice < markPrice
+        if (order.side == OrderSide.SELL) {
+          if (isCoinM) {
+            // Sell order cost = Size * Contract Multiplier * MulSel
+            orderCost = size.multipliedBy(multiplier).multipliedBy(mulSell);
+          } else {
+            // Sell order cost = Size * MulSel
+            orderCost = size.multipliedBy(mulSell);
+          }
+        } else {
+          if (isCoinM) {
+            // Buy order cost = max (0, Size * Contract Multiplier / (Leverage * Input price)
+            // - MarSel + MarBuy)
+            const tempVal = size
+              .multipliedBy(multiplier)
+              .dividedBy(inputPrice.multipliedBy(leverage))
+              .minus(marSel)
+              .plus(marBuy);
+            orderCost = orderCost.isGreaterThan(tempVal) ? orderCost : tempVal;
+          } else {
+            // Buy order cost = max (0; Input price * Size/ Leverage - MarSel + MarBuy)
+            const tempVal = inputPrice.multipliedBy(size).dividedBy(leverage).minus(marSel).plus(marBuy);
+            orderCost = orderCost.isGreaterThan(tempVal) ? orderCost : tempVal;
+          }
+        }
+      }
+    } else {
+      // marBuy == marSel
+      if (comparePrice) {
+        // if inputPrice > markPrice
+        if (order.side == OrderSide.SELL) {
+          if (isCoinM) {
+            // Sell order cost = Size * Contract Multiplier / (Leverage * Input price)
+            orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
+          } else {
+            // Sell order cost = Input price * Size / Leverage
+            orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
+          }
+        } else {
+          if (isCoinM) {
+            // Buy order cost = Size * Contract Multiplier * MulBuy
+            orderCost = size.multipliedBy(multiplier).multipliedBy(mulBuy);
+          } else {
+            // Buy order cost = Size * MulBuy
+            orderCost = size.multipliedBy(mulBuy);
+          }
+        }
+      } else {
+        // if inputPrice < markPrice
+        if (order.side == OrderSide.SELL) {
+          if (isCoinM) {
+            // Sell order cost = Size * Contract Multiplier * MulSel
+            orderCost = size.multipliedBy(multiplier).multipliedBy(mulSell);
+          } else {
+            // Sell order cost = Size * MulSel
+            orderCost = size.multipliedBy(mulSell);
+          }
+        } else {
+          if (isCoinM) {
+            // Buy order cost = Size *Contract Multiplier / (Leverage * Input price)
+            orderCost = size.multipliedBy(multiplier).dividedBy(inputPrice.multipliedBy(leverage));
+          } else {
+            // Buy order cost = Input price * Size/ Leverage
+            orderCost = inputPrice.multipliedBy(size).dividedBy(leverage);
+          }
+        }
+      }
     }
     return orderCost;
   }

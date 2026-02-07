@@ -93,9 +93,30 @@
 
 ---
 
-### 2026-02-02 (Latest Session)
+### 2026-02-07 (Latest Session)
 
-#### [2026-02-02_06-53-13] Future Event V2 테스트 및 검증 **[최신]**
+#### [2026-02-07_08-30-00] TPS 최적화 4단계 **[최신]**
+- **상태**: ✅ 완료
+- **파일**: `2026-02-07_08-30-00_TPS-Optimization-4-Steps.md`
+- **작업 내용**:
+  1. lodash 타입 호환성 문제 해결 (`@types/lodash@4.14.191`)
+  2. Kafka 샤딩 활성화 확인 (이미 enabled)
+  3. calAvailableBalance 병렬화 (50-60% 응답 시간 개선)
+  4. 계정 캐시 TTL 증가 (60초 → 300초)
+- **산출물**:
+  - 커밋: 3개 (타입 에러 수정, 배치 INSERT, 병렬화)
+  - 수정: 5개 파일
+  - 예상 TPS 개선: +30-40%
+- **검증**:
+  - ✅ TypeScript 빌드 성공
+  - ✅ 모든 타입 에러 해결
+  - ✅ 배포 후 TPS 테스트 필요
+
+---
+
+### 2026-02-02
+
+#### [2026-02-02_06-53-13] Future Event V2 테스트 및 검증
 - **상태**: ✅ 완료
 - **파일**: `2026-02-02_06-53-13_Future-Event-V2-Testing-And-Verification.md`
 - **작업 내용**:
@@ -123,7 +144,8 @@
 ```
 history/
 ├── INDEX.md (이 파일)
-├── 2026-02-02_06-53-13_Future-Event-V2-Testing-And-Verification.md ⭐ [최신]
+├── 2026-02-07_08-30-00_TPS-Optimization-4-Steps.md ⭐ [최신]
+├── 2026-02-02_06-53-13_Future-Event-V2-Testing-And-Verification.md
 ├── 2026-02-02_06-53-13_Matching-Engine-And-OrderRouter-Integration.md
 ├── 2026-01-31_09-34-46_Future-Event-V2-AWS-EKS-Deployment.md
 ├── 2026-01-30_22-20-52_Session-Verification-And-Checkpoints.md

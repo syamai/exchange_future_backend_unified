@@ -14,6 +14,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -23,6 +24,8 @@ export const MIN_ORDER_ID = 100000000000;
 @Entity({
   name: "orders",
 })
+@Index("idx_orders_margin_calc", ["accountId", "asset", "status"])
+@Index("idx_orders_account_status", ["accountId", "status"])
 export class OrderEntity {
   @PrimaryGeneratedColumn()
   id: number;

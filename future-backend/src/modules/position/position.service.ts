@@ -1359,7 +1359,7 @@ SELECT pSl.*
 
   /**
    * Cached version of calPositionMarginForAcc
-   * TTL: 3 seconds (short TTL due to frequently changing position data)
+   * TTL: 10 seconds (balanced between performance and data freshness)
    */
   async calPositionMarginForAccCached(
     accountId: number,
@@ -1384,7 +1384,7 @@ SELECT pSl.*
     }
 
     const result = await this.calPositionMarginForAcc(accountId, asset);
-    await this.cacheManager.set(cacheKey, result, 3); // 3 seconds TTL
+    await this.cacheManager.set(cacheKey, result, 5); // 5 seconds TTL (balanced: performance vs accuracy)
     return result;
   }
 

@@ -2151,6 +2151,14 @@ export class OrderService extends BaseEngineService {
   }
 
   async calOrderMargin(accountId: number, asset: string) {
+    // Cache key for order margin (5 second TTL for balance accuracy)
+    const cacheKey = `orderMargin:${accountId}:${asset}`;
+
+    const cached = await this.cacheManager.get<string>(cacheKey);
+    if (cached !== null && cached !== undefined) {
+      return cached;
+    }
+
     try {
       const result = await this.orderRepoReport
         .createQueryBuilder("o")
@@ -2162,10 +2170,21 @@ export class OrderService extends BaseEngineService {
         .select("SUM(o.orderMargin) as totalCost")
         .getRawOne();
 
-      return result.totalCost ? result.totalCost : 0;
+      const margin = result.totalCost ? result.totalCost : 0;
+      await this.cacheManager.set(cacheKey, margin, 5); // 5 seconds TTL
+      return margin;
     } catch (error) {
       throw new HttpException(httpErrors.ORDER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
+  }
+
+  /**
+   * Invalidate order margin cache when order status changes
+   * Call this when order is filled, cancelled, or modified
+   */
+  async invalidateOrderMarginCache(accountId: number, asset: string): Promise<void> {
+    const cacheKey = `orderMargin:${accountId}:${asset}`;
+    await this.cacheManager.del(cacheKey);
   }
 
   async updateUserIdInOrder(): Promise<void> {

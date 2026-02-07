@@ -509,11 +509,11 @@ export class SaveOrderFromClientV2UseCase {
         where: { userId, asset },
         select: ["id", "userId", "userEmail", "asset", "balance"],
       });
-      // Cache to Redis for future requests (TTL: 60 seconds)
+      // Cache to Redis for future requests (TTL: 5 minutes for better cache hit rate)
       if (account) {
         await this.redisClient
           .getInstance()
-          .setex(redisKeyWithAsset, 60, JSON.stringify(account));
+          .setex(redisKeyWithAsset, 300, JSON.stringify(account));
       }
     }
 

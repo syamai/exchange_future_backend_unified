@@ -61,7 +61,26 @@ yarn typeorm:run             # Run migrations
 yarn typeorm:revert          # Revert last migration (run multiple times for multiple reverts)
 yarn typeorm:create <name>   # Create new empty migration
 yarn typeorm:migrate         # Generate migration from entity changes
+```
 
+### TypeORM 마이그레이션 체크리스트
+
+Entity 변경 시 반드시 다음 순서를 따름:
+
+1. **Entity 수정**: `@Column`, `@Index`, `@ManyToOne` 등 데코레이터 추가/수정
+2. **마이그레이션 생성**: `yarn typeorm:create <마이그레이션명>`
+3. **SQL 작성**: up() 메서드에 CREATE/ALTER, down() 메서드에 롤백 SQL
+4. **로컬 테스트**: `yarn typeorm:run`
+5. **롤백 테스트**: `yarn typeorm:revert` 후 다시 `yarn typeorm:run`
+6. **커밋**: Entity 파일과 마이그레이션 파일 함께 커밋
+7. **배포 후**: Pod에서 `yarn typeorm:run` 실행 확인
+
+**주의사항**:
+- `@Index` 데코레이터만 추가하면 DB에 인덱스 생성 안 됨 (마이그레이션 필수)
+- 프로덕션 DB에 직접 DDL 실행 금지
+- 대용량 테이블 변경 시 락 발생 주의
+
+```bash
 # Console commands (workers)
 yarn console:dev matching-engine:load              # Initialize matching engine
 yarn console:dev matching-engine:save-accounts-to-db

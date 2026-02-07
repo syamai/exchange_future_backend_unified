@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "3.45.0",
+    "@ethersproject/providers": "^5.8.0",
     "@felix042024/nestjs-export": "^1.0.8",
     "@nestjs-modules/mailer": "1.6.0",
     "@nestjs/axios": "^0.1.0",
@@ -80,6 +81,7 @@
     "jwt-decode": "3.1.2",
     "kafkajs": "1.15.0",
     "lodash": "4.17.21",
+    "long": "^5.3.2",
     "moment": "^2.29.4",
     "morgan": "1.10.0",
     "mysql": "2.18.1",
@@ -124,6 +126,7 @@
     "@types/ioredis": "^4.28.10",
     "@types/jest": "26.0.23",
     "@types/lodash": "^4.14.191",
+    "@types/long": "^5.0.0",
     "@types/morgan": "1.9.2",
     "@types/node": "14.14.36",
     "@types/node-fetch": "^2.6.2",

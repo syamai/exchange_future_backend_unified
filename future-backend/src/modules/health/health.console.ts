@@ -3,7 +3,7 @@ import {
   MetricDatum,
   PutMetricDataCommand,
 } from "@aws-sdk/client-cloudwatch";
-import { JsonRpcProvider } from "@ethersproject/providers/src.ts/json-rpc-provider";
+// JsonRpcProvider is used via ethers.providers below
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PublicKey } from "@solana/web3.js";
@@ -44,7 +44,7 @@ const { dexId, dexProgram, finalizedConnection, usdcId } = SolDex;
 export class HealthConsole {
   private readonly logger = new Logger(HealthConsole.name);
   private cloudWatchClient: CloudWatchClient;
-  private provider: JsonRpcProvider;
+  private provider: providers.JsonRpcProvider;
   private readonly dexWrapper: SotaDexWrapper;
   private sotadexAccount: PublicKey;
 

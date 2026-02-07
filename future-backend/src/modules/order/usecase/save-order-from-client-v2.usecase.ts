@@ -314,7 +314,9 @@ export class SaveOrderFromClientV2UseCase {
 
     if (body.stopLoss) {
       tpSlOrders.push({
-        ...body,
+        symbol: unsavedOrder.symbol,
+        quantity: unsavedOrder.quantity,
+        remaining: unsavedOrder.remaining,
         status: OrderStatus.PENDING,
         accountId: account.id,
         userId: account.userId,
@@ -323,8 +325,6 @@ export class SaveOrderFromClientV2UseCase {
         trigger: unsavedOrder.stopLossTrigger,
         orderValue: "0",
         tpSLType: TpSlType.STOP_MARKET,
-        stopLoss: null,
-        takeProfit: null,
         price: null,
         type: OrderType.MARKET,
         asset: unsavedOrder.asset,
@@ -345,7 +345,9 @@ export class SaveOrderFromClientV2UseCase {
 
     if (body.takeProfit) {
       tpSlOrders.push({
-        ...body,
+        symbol: unsavedOrder.symbol,
+        quantity: unsavedOrder.quantity,
+        remaining: unsavedOrder.remaining,
         status: OrderStatus.PENDING,
         accountId: account.id,
         userId: account.userId,
@@ -354,8 +356,6 @@ export class SaveOrderFromClientV2UseCase {
         trigger: unsavedOrder.takeProfitTrigger,
         orderValue: "0",
         tpSLType: TpSlType.TAKE_PROFIT_MARKET,
-        stopLoss: null,
-        takeProfit: null,
         price: null,
         type: OrderType.MARKET,
         asset: unsavedOrder.asset,
@@ -365,7 +365,7 @@ export class SaveOrderFromClientV2UseCase {
         isHidden: true,
         stopCondition: unsavedOrder.takeProfitCondition,
         isReduceOnly: true,
-        isTpSlOrder: true,  // Fixed typo: 'isTpSlOder' -> 'isTpSlOrder'
+        isTpSlOrder: true,
         contractType: unsavedOrder.contractType,
         isPostOnly: false,
         userEmail: account.userEmail,

@@ -1501,15 +1501,19 @@ export class OrderService extends BaseEngineService {
       asset = "USD";
     }
 
-    for (const orderNeedCreate of data.createOrderDtos) {
-      const defaultCreateOrderAccount: AccountEntity = defaultCreateOrderAccounts.find((a) => a.asset === asset);
-      if (!defaultCreateOrderAccount) continue;
-      await this.createOrder(orderNeedCreate, {
-        accountId: defaultCreateOrderAccount.id,
-        userId: defaultCreateOrderAccount.userId,
-        email: defaultCreateOrderAccount.userEmail,
-      });
-    }
+    // Parallelize order creation for better TPS (each order is independent)
+    const defaultCreateOrderAccount = defaultCreateOrderAccounts.find((a) => a.asset === asset);
+    if (!defaultCreateOrderAccount) return;
+
+    await Promise.all(
+      data.createOrderDtos.map((orderNeedCreate) =>
+        this.createOrder(orderNeedCreate, {
+          accountId: defaultCreateOrderAccount.id,
+          userId: defaultCreateOrderAccount.userId,
+          email: defaultCreateOrderAccount.userEmail,
+        })
+      )
+    );
   }
 
   async getRootOrder(accountId: number, orderId: number, type: ORDER_TPSL): Promise<OrderEntity> {

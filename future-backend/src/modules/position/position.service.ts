@@ -1384,7 +1384,7 @@ SELECT pSl.*
     }
 
     const result = await this.calPositionMarginForAcc(accountId, asset);
-    await this.cacheManager.set(cacheKey, result, 5); // 5 seconds TTL (balanced: performance vs accuracy)
+    await this.cacheManager.set(cacheKey, result, 10); // 10 seconds TTL (increased from 5s for better TPS)
     return result;
   }
 

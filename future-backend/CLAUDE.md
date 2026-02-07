@@ -509,3 +509,87 @@ docker exec kafka-test rpk topic create \
 # 토픽 확인
 docker exec kafka-test rpk topic list
 ```
+
+---
+
+## TPS 테스트 가이드라인 (2026-02-07 추가)
+
+### 핵심 원칙
+
+**Raw TPS ≠ 유효 TPS**
+- k6가 측정하는 Raw TPS = HTTP 요청 수 (성공 + 실패)
+- 비즈니스 가치 = 유효 TPS = Raw TPS × 성공률
+- HTTP 실패가 많으면 Raw TPS가 높아 보이지만 무의미
+
+### 테스트 전 체크리스트
+
+```
+[ ] HPA 비활성화 또는 Pod 수 고정
+    kubectl patch hpa future-backend-hpa -n future-backend-dev \
+      --type='json' -p='[{"op": "replace", "path": "/spec/maxReplicas", "value": 5}]'
+
+[ ] Pod 수 확인 및 고정
+    kubectl scale deployment dev-future-backend --replicas=5 -n future-backend-dev
+
+[ ] 이전 테스트 잔여 부하 해소 (30초 대기)
+
+[ ] JWT 토큰 유효성 확인
+```
+
+### 테스트 방법
+
+```bash
+# 1. Cold start 테스트 (캐시 미스 상태)
+k6 run -e BASE_URL=https://f-api.borntobit.com -e TOKEN="$JWT" test.js
+
+# 2. Warm cache 테스트 (즉시 연속 실행)
+k6 run -e BASE_URL=https://f-api.borntobit.com -e TOKEN="$JWT" test.js
+
+# 유효한 결과: 2번째 테스트 (warm cache) + HTTP 실패율 0%
+```
+
+### 결과 해석
+
+| 지표 | 의미 | 목표 |
+|------|------|------|
+| `http_reqs` | Raw TPS (참고용) | - |
+| `order_success_rate` | 주문 성공률 | > 80% |
+| `http_req_failed` | HTTP 실패율 | **0%** |
+| **유효 TPS** | Raw TPS × 성공률 | 핵심 지표 |
+
+### 유효하지 않은 테스트 결과
+
+다음 경우 결과를 신뢰하지 말 것:
+- HTTP 실패율 > 5% (502 에러 = 서버 과부하)
+- 테스트 중 Pod 수 변동 (HPA 간섭)
+- 첫 번째 테스트 (Cold start)
+
+### 현재 인프라 기준 성능
+
+| Pods | 유효 TPS (HTTP 실패 0%) | Pod당 TPS |
+|------|------------------------|-----------|
+| 1 | ~73 | 73 |
+| 5 | ~240 | 48 |
+| 10 | ~265 | 26 |
+| 15 | ~334 | 22 |
+
+**스케일링 효율 감소**: Pod 증가 시 RDS 연결 풀 경합으로 Pod당 TPS 감소
+
+### 테스트 후 원복
+
+```bash
+# Pod 스케일 다운
+kubectl scale deployment dev-future-backend --replicas=1 -n future-backend-dev
+
+# HPA 원복 (필요시)
+kubectl patch hpa future-backend-hpa -n future-backend-dev \
+  --type='json' -p='[{"op": "replace", "path": "/spec/maxReplicas", "value": 5}]'
+```
+
+### 2000 TPS 달성 요구사항
+
+현재 ~334 TPS (15 Pods) → 2000 TPS 달성 필요:
+1. RDS 업그레이드 (r6g.large → r6g.xlarge)
+2. Connection Pool 튜닝
+3. 매칭 엔진 샤딩 활성화
+4. Backend 30+ Pods

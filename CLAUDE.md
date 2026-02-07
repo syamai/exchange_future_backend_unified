@@ -242,83 +242,40 @@ kubectl apply -k spot-backend/k8s/overlays/dev
 
 ---
 
-## Future Backend TPS 테스트 결과 (2026-02-05)
+## 2000 TPS 달성 로드맵 (2026-02-06 업데이트)
 
-### 테스트 환경
+### 현재 상태
 
-- **서버**: `f-api.borntobit.com` (exchange-cicd-dev EKS)
-- **도구**: k6 부하 테스트
-- **최대 VU**: 400
-- **테스트 시간**: 약 3분
+- **TPS**: 334 (15 Pods 기준)
+- **max_connections**: 2000 (수정 완료)
+- **샤딩**: 비활성화 상태
 
-### JWT ConfigMap 수정
+### 다음 단계
 
-기존 ConfigMap의 JWT 키가 잘못된 형식으로 저장되어 있어서 수정함.
+1. **코드 최적화** (334→594 TPS)
+   - `calPositionMarginForAccCached` 구현
+   - TP/SL 배치 저장
 
-**문제**: `auth.module.ts`가 base64 인코딩된 PEM 키를 기대하지만, PEM 문자열이 직접 저장됨
+2. **샤딩 활성화** (594→1,200 TPS)
+   - `config/default.yml`: `sharding.enabled: true`
+   - Matching Engine 3개 배포
 
-**해결**:
-```bash
-# PEM 키를 base64로 인코딩 후 ConfigMap 업데이트
-cat private.pem | base64 > private_b64.txt
-kubectl apply -f updated-configmap.yaml
-```
-
-### TPS 테스트 결과 비교
-
-| 지표 | 1 Pod | 5 Pods | 개선율 |
-|------|-------|--------|--------|
-| **TPS** | 73 | **357** | **+388%** |
-| 총 주문 | 13,734 | 57,146 | +316% |
-| Median RT | 1,942ms | 154ms | **-92%** |
-| P95 RT | 4,021ms | 1,454ms | -64% |
-| HTTP 실패 | 0.07% | 39.74% | ⚠️ |
-
-### 핵심 발견
-
-1. **Pod 스케일링 효과**: 5배 Pod → 4.9배 TPS (거의 선형 확장)
-2. **응답 시간 대폭 개선**: median 154ms (92% 감소)
-3. **병목 발견**: 고부하 시 39% 실패 → DB 연결 풀 부족 추정
-
-### 2000 TPS 달성 예측
-
-```
-현재: 5 Pods = 357 TPS
-필요: 2000 TPS / 357 TPS * 5 Pods ≈ 28 Pods
-
-단, 추가 인프라 업그레이드 필수:
-- RDS: db.r6g.xlarge + connection pool 증가
-- Redis: cache.r6g.large
-- Matching Engine 샤딩 활성화 (sharding.enabled: true)
-```
-
-### 권장 아키텍처 (2000 TPS)
-
-| 리소스 | 수량 | 월 비용 |
-|--------|------|---------|
-| Backend Pods (t3.large) | 10개 | ~$600 |
-| Matching Engine (t3.large) | 6개 (3 shards × 2) | ~$360 |
-| RDS r6g.xlarge | 1+1 (Read Replica) | ~$500 |
-| Redis r6g.large | 1 | ~$200 |
-| Kafka (t3.medium x3) | 3 | ~$150 |
-| **Total** | | **~$1,800/월** |
+3. **스케일 업** (1,200→2,000 TPS)
+   - Backend Pods 30개
+   - Consumer 10개
 
 ### 스케일 업/다운 명령어
 
 ```bash
-# EKS 노드 스케일 업 (테스트용)
-AWS_PROFILE=critonex aws eks update-nodegroup-config \
-  --cluster-name exchange-cicd-dev \
-  --nodegroup-name ng-spot-1 \
-  --scaling-config minSize=3,maxSize=6,desiredSize=4 \
-  --region ap-northeast-2
+# 스케일 업 (테스트)
+kubectl scale deployment dev-future-backend --replicas=15 -n future-backend-dev
+kubectl scale deployment dev-order-save-consumer --replicas=10 -n future-backend-dev
+kubectl patch hpa future-backend-hpa -n future-backend-dev --patch '{"spec":{"maxReplicas":15}}'
 
-# Backend Pod 스케일 업
-kubectl scale deployment dev-future-backend --replicas=5 -n future-backend-dev
-
-# 테스트 후 원복
-kubectl scale deployment dev-future-backend --replicas=1 -n future-backend-dev
-aws eks update-nodegroup-config ... --scaling-config desiredSize=2
+# 스케일 다운 (비용 절감)
+kubectl scale deployment dev-future-backend --replicas=3 -n future-backend-dev
+kubectl scale deployment dev-order-save-consumer --replicas=3 -n future-backend-dev
+kubectl patch hpa future-backend-hpa -n future-backend-dev --patch '{"spec":{"maxReplicas":5}}'
 ```
 
 ### k6 테스트 실행
@@ -326,14 +283,5 @@ aws eks update-nodegroup-config ... --scaling-config desiredSize=2
 ```bash
 cd future-backend
 JWT_TOKEN=$(cat /tmp/new_jwt.txt)
-k6 run \
-  -e BASE_URL=https://f-api.borntobit.com \
-  -e TOKEN="$JWT_TOKEN" \
-  test/performance/order-tps-test.js
+k6 run -e BASE_URL=https://f-api.borntobit.com -e TOKEN="$JWT_TOKEN" test/performance/order-tps-test.js
 ```
-
-### 관련 파일
-
-- `future-backend/test/performance/order-tps-test.js` - k6 테스트 스크립트
-- `future-backend/src/modules/auth/auth.module.ts` - JWT 설정 (base64 디코딩)
-- `future-backend/src/modules/auth/strategies/jwt.strategy.ts` - JWT 검증 (`payload.sub` 사용)

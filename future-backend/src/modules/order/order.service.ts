@@ -83,6 +83,11 @@ import Long from "long";
 
 @Injectable()
 export class OrderService extends BaseEngineService {
+  // In-memory cache for mark prices (1 second TTL)
+  // Reduces Redis round-trips for frequently accessed mark prices
+  private markPriceCache = new Map<string, { price: string; timestamp: number }>();
+  private readonly MARK_PRICE_CACHE_TTL_MS = 1000; // 1 second
+
   constructor(
     public readonly logger: Logger,
     @InjectRepository(OrderRepository, "report")
@@ -129,6 +134,35 @@ export class OrderService extends BaseEngineService {
     private readonly redisClient: RedisClient
   ) {
     super();
+  }
+
+  /**
+   * Get mark price with in-memory cache (1 second TTL)
+   * Reduces Redis round-trips for frequently accessed mark prices during order processing
+   */
+  async getMarkPriceCached(symbol: string): Promise<string> {
+    const cached = this.markPriceCache.get(symbol);
+    const now = Date.now();
+
+    if (cached && (now - cached.timestamp) < this.MARK_PRICE_CACHE_TTL_MS) {
+      return cached.price;
+    }
+
+    // Fetch from Redis
+    const price = await this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${symbol}`);
+
+    if (price) {
+      this.markPriceCache.set(symbol, { price, timestamp: now });
+    }
+
+    return price || '0';
+  }
+
+  /**
+   * Invalidate mark price cache for a symbol
+   */
+  invalidateMarkPriceCache(symbol: string): void {
+    this.markPriceCache.delete(symbol);
   }
 
   async getOpenOrderByAccountId(paging: PaginationDto, userId: number, openOrderDto: OpenOrderDto): Promise<ResponseDto<OrderEntity[]>> {
@@ -1029,8 +1063,9 @@ export class OrderService extends BaseEngineService {
     if (markPriceParam && markPriceParam.trim() !== '') {
       markPrice = new BigNumber(markPriceParam);
     } else {
-      const redisMarkPrice = await this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`);
-      markPrice = redisMarkPrice ? new BigNumber(redisMarkPrice) : new BigNumber(0);
+      // Use in-memory cached mark price to reduce Redis round-trips
+      const cachedMarkPrice = await this.getMarkPriceCached(instrument.symbol);
+      markPrice = cachedMarkPrice ? new BigNumber(cachedMarkPrice) : new BigNumber(0);
     }
 
     // Safety check: prevent NaN or zero from corrupting calculations
@@ -1119,10 +1154,11 @@ export class OrderService extends BaseEngineService {
     instrument: InstrumentEntity,
     isCoinM: boolean
   }): Promise<BigNumber> {
-    const { isLongPosition, positionMargin, positionSize, inputPrice, marBuy, marSel, mulBuy, mulSell, order, instrument, isCoinM } = data; 
+    const { isLongPosition, positionMargin, positionSize, inputPrice, marBuy, marSel, mulBuy, mulSell, order, instrument, isCoinM } = data;
     const multiplier = isCoinM ? instrument.multiplier : new BigNumber(1);
-    const markPrice = new BigNumber(await this.redisClient.getInstance()
-        .get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`)) ?? new BigNumber(0);
+    // Use in-memory cached mark price to reduce Redis round-trips
+    const cachedMarkPrice = await this.getMarkPriceCached(instrument.symbol);
+    const markPrice = cachedMarkPrice ? new BigNumber(cachedMarkPrice) : new BigNumber(0);
     const size = new BigNumber(order.remaining);
     const leverage = Number(order.leverage);
 
@@ -1283,8 +1319,9 @@ export class OrderService extends BaseEngineService {
   }): Promise<BigNumber> {
     const { inputPrice, marBuy, marSel, mulBuy, mulSell, order, instrument, isCoinM } = data;
     const multiplier = isCoinM ? instrument.multiplier : new BigNumber(1);
-    const markPrice = new BigNumber(await this.redisClient.getInstance()
-        .get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`)) ?? new BigNumber(0);
+    // Use in-memory cached mark price to reduce Redis round-trips
+    const cachedMarkPrice = await this.getMarkPriceCached(instrument.symbol);
+    const markPrice = cachedMarkPrice ? new BigNumber(cachedMarkPrice) : new BigNumber(0);
     const size = new BigNumber(order.remaining);
     const leverage = new BigNumber(order.leverage);
 
@@ -1697,7 +1734,9 @@ export class OrderService extends BaseEngineService {
         orderQtyInPercent = orderQtyInPercent.isEqualTo(100)? orderQtyInPercent.minus(0.5): orderQtyInPercent;
         const balanceFromPercent = availBalance.dividedBy(100).multipliedBy(orderQtyInPercent);
         const balanceFromPercentMulLeverage = balanceFromPercent.multipliedBy(userLeverage);
-        const markPrice = new BigNumber(await this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`)) ?? new BigNumber(0);
+        // Use in-memory cached mark price to reduce Redis round-trips
+        const cachedMarkPrice = await this.getMarkPriceCached(instrument.symbol);
+        const markPrice = cachedMarkPrice ? new BigNumber(cachedMarkPrice) : new BigNumber(0);
         const convertedQuantity = balanceFromPercentMulLeverage.dividedBy(markPrice);
         order.quantity = convertedQuantity.toFixed(+maxFiguresForSize);
       }
@@ -1931,7 +1970,8 @@ export class OrderService extends BaseEngineService {
     const [tradingRules, instrument, markPrice] = await Promise.all([
       this.tradingRulesService.getTradingRuleByInstrumentId(order.symbol) as any,
       this.instrumentService.getCachedInstrument(order.symbol),
-      this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${order.symbol}`),
+      // Use in-memory cached mark price to reduce Redis round-trips
+      this.getMarkPriceCached(order.symbol),
     ]);
     let price: BigNumber;
     let minPrice: BigNumber;
@@ -2165,7 +2205,9 @@ export class OrderService extends BaseEngineService {
   }
 
   async calOrderMargin(accountId: number, asset: string) {
-    // Cache key for order margin (5 second TTL for balance accuracy)
+    // Cache key for order margin
+    // TTL increased to 30 seconds for better TPS performance
+    // Safe because invalidateOrderMarginCache() is called when orders change
     const cacheKey = `orderMargin:${accountId}:${asset}`;
 
     const cached = await this.cacheManager.get<string>(cacheKey);
@@ -2185,7 +2227,7 @@ export class OrderService extends BaseEngineService {
         .getRawOne();
 
       const margin = result.totalCost ? result.totalCost : 0;
-      await this.cacheManager.set(cacheKey, margin, 5); // 5 seconds TTL
+      await this.cacheManager.set(cacheKey, margin, 30); // 30 seconds TTL (increased from 5s)
       return margin;
     } catch (error) {
       throw new HttpException(httpErrors.ORDER_NOT_FOUND, HttpStatus.NOT_FOUND);

@@ -95,8 +95,31 @@
 
 ### 2026-02-07 (Latest Session)
 
-#### [2026-02-07_15-12-07] 병렬 쿼리 최적화 + 보안 수정 **[최신]**
+#### [2026-02-07_21-45-00] 캐시 TTL + Mark Price 인메모리 최적화 **[최신]**
 - **상태**: ✅ 완료
+- **파일**: `2026-02-07_21-45-00_cache-ttl-mark-price-optimization.md`
+- **작업 내용**:
+  1. Mark Price 인메모리 캐시 구현 (1초 TTL, Redis 조회 4회 제거)
+  2. orderMargin TTL 5초 → 30초 증가
+  3. positionMargin TTL 5초 → 10초 증가
+- **TPS 테스트 결과 (5 Pods)**:
+  - Cold: 278 TPS (유효 224 TPS, 80.67%)
+  - Warm: 287 TPS (유효 **238 TPS**, 82.98%)
+  - **Median RT 28% 개선** (179ms → 129ms)
+  - HTTP 실패율: 0%
+- **수정 파일**:
+  - `src/modules/order/order.service.ts`
+  - `src/modules/position/position.service.ts`
+- **검증**:
+  - ✅ TypeScript 빌드 성공
+  - ✅ 80개 테스트 통과
+  - ✅ EKS 배포 완료 (tps-opt-202602072141)
+  - ✅ TPS 테스트 완료
+
+---
+
+#### [2026-02-07_15-12-07] 병렬 쿼리 최적화 + 보안 수정 + TPS 테스트
+- **상태**: ✅ 완료 (TPS 테스트 포함)
 - **파일**: `2026-02-07_15-12-07_parallel-query-optimization.md`
 - **작업 내용**:
   1. `getTradingRuleByInstrumentId`: tradingRule + instrument 병렬 조회
@@ -111,12 +134,16 @@
   - `src/modules/trading-rules/trading-rule.service.ts`
   - `src/modules/order/order.service.ts`
   - `src/modules/order/usecase/save-order-from-client-v2.usecase.ts`
-- **예상 효과**:
-  - 응답 시간: 4-7ms 감소
-  - TPS: ~367 → ~450-550 TPS (+22-50%)
+- **TPS 테스트 결과**:
+  - 5 Pods: Raw 463 TPS (유효 214 TPS, 46% 성공률)
+  - 10 Pods: Raw 308 TPS (유효 **262 TPS**, **85% 성공률**)
+  - 스케일업 효과: 유효 TPS +22%, HTTP 실패 50%→0%
 - **검증**:
   - ✅ TypeScript 빌드 성공
-  - ✅ security-engineer 보안 검토 완료
+  - ✅ 80개 테스트 통과
+  - ✅ CI/CD 파이프라인 통과
+  - ✅ EKS 배포 완료
+  - ✅ 5 Pods / 10 Pods TPS 테스트 완료
 
 ---
 
@@ -193,7 +220,8 @@
 ```
 history/
 ├── INDEX.md (이 파일)
-├── 2026-02-07_15-12-07_parallel-query-optimization.md ⭐ [최신]
+├── 2026-02-07_21-45-00_cache-ttl-mark-price-optimization.md ⭐ [최신]
+├── 2026-02-07_15-12-07_parallel-query-optimization.md
 ├── 2026-02-07_11-44-46_cache-invalidation-tps-optimization.md
 ├── 2026-02-07_08-30-00_TPS-Optimization-4-Steps.md
 ├── 2026-02-02_06-53-13_Future-Event-V2-Testing-And-Verification.md

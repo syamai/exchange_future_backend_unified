@@ -125,16 +125,27 @@ export class TradingRulesService {
       if (tradingRulesCache) {
         return tradingRulesCache;
       }
-      const tradingRule = await this.tradingRulesReport.findOne({ symbol });
+
+      // Parallel fetch: tradingRule and instrument for performance optimization
+      const [tradingRule, instrument] = await Promise.all([
+        this.tradingRulesReport.findOne({ symbol }),
+        this.instrumentRepoReport.findOne({ symbol })
+      ]);
+
       if (!tradingRule) {
         throw new HttpException(
           httpErrors.TRADING_RULES_DOES_NOT_EXIST,
           HttpStatus.NOT_FOUND
         );
       }
-      const instrument = await this.instrumentRepoReport.findOne({ symbol });
+      if (!instrument) {
+        throw new HttpException(
+          httpErrors.INSTRUMENT_DOES_NOT_EXIST,
+          HttpStatus.NOT_FOUND
+        );
+      }
       const data = { ...tradingRule, ...instrument };
-  
+
       await this.cacheManager.set(`${TRADING_RULES_CACHE}_${symbol}`, data, { ttl: TRADING_RULES_TTL });
       return data;
     } catch (e) {

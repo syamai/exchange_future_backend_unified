@@ -552,10 +552,11 @@ export class SaveOrderFromClientV2UseCase {
       order.remaining = new BigNumber(parseFloat(order.remaining)).toFixed();
     }
 
-    // Parallel fetch: isBot and tradingRule
-    const [isBot, tradingRule] = await Promise.all([
+    // Parallel fetch: isBot, tradingRule, and markPrice for performance optimization
+    const [isBot, tradingRule, markPrice] = await Promise.all([
       this.botInMemoryService.checkIsBotAccountId(account.id),
-      this.tradingRulesService.getTradingRuleByInstrumentId(order.symbol) as Promise<TradingRulesEntity>
+      this.tradingRulesService.getTradingRuleByInstrumentId(order.symbol) as Promise<TradingRulesEntity>,
+      this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`)
     ]);
 
     if (!isBot) {
@@ -594,27 +595,37 @@ export class SaveOrderFromClientV2UseCase {
         const balanceFromPercentMulLeverage = balanceFromPercent.multipliedBy(
           userLeverage
         );
-        const markPrice =
-          new BigNumber(
-            await this.redisClient
-              .getInstance()
-              .get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`)
-          ) ?? new BigNumber(0);
+        // Use the markPrice fetched in parallel above instead of Redis lookup
+        // Explicit null/undefined check to avoid NaN (nullish coalescing doesn't handle NaN)
+        const markPriceBN = markPrice && markPrice.trim() !== ''
+          ? new BigNumber(markPrice)
+          : new BigNumber(0);
+
+        // Prevent division by zero or NaN - critical for financial calculations
+        if (markPriceBN.isNaN() || markPriceBN.isLessThanOrEqualTo(0)) {
+          this.errors.enqueue({
+            ...httpErrors.ORDER_PRICE_VALIDATION_FAIL,
+            userId: account.userId.toString(),
+          });
+          return null;
+        }
+
         const convertedQuantity = balanceFromPercentMulLeverage.dividedBy(
-          markPrice
+          markPriceBN
         );
         order.quantity = convertedQuantity.toFixed(
           +instrument.maxFiguresForSize
         );
       }
 
-      // Validate available balance
+      // Validate available balance - pass markPrice to avoid Redis lookup
       const orderCost = await this.orderService.calcOrderCost({
         order: (order as unknown) as OrderEntity,
         position,
         leverage: userLeverage,
         instrument,
         isCoinM: order.contractType === ContractType.COIN_M,
+        markPrice,
       });
 
       if (availBalance.isLessThanOrEqualTo(orderCost)) {
@@ -674,7 +685,8 @@ export class SaveOrderFromClientV2UseCase {
         return null;
       }
     }
-    await this.validateMinMaxPrice(createOrder, account.userId);
+    // Pass already-fetched data to avoid duplicate queries
+    await this.validateMinMaxPrice(createOrder, account.userId, tradingRule, instrument, markPrice);
 
     // TPSL
     let checkPrice;
@@ -1148,18 +1160,13 @@ export class SaveOrderFromClientV2UseCase {
 
   private async validateMinMaxPrice(
     createOrderDto: CreateOrderDto,
-    userId: number
+    userId: number,
+    tradingRules: TradingRulesEntity,
+    instrument: InstrumentEntity,
+    markPrice: string
   ) {
     const order = { ...createOrderDto };
-    const [tradingRules, instrument, markPrice] = await Promise.all([
-      this.tradingRulesService.getTradingRuleByInstrumentId(
-        order.symbol
-      ) as any,
-      this.instrumentService.getCachedInstrument(order.symbol),
-      this.redisClient
-        .getInstance()
-        .get(`${ORACLE_PRICE_PREFIX}${order.symbol}`),
-    ]);
+    // tradingRules, instrument, markPrice are passed from caller to avoid duplicate queries
     let price: BigNumber;
     let minPrice: BigNumber;
     let maxPrice: BigNumber;

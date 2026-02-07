@@ -95,7 +95,32 @@
 
 ### 2026-02-07 (Latest Session)
 
-#### [2026-02-07_11-44-46] 캐시 무효화 및 TPS 최적화 **[최신]**
+#### [2026-02-07_15-12-07] 병렬 쿼리 최적화 + 보안 수정 **[최신]**
+- **상태**: ✅ 완료
+- **파일**: `2026-02-07_15-12-07_parallel-query-optimization.md`
+- **작업 내용**:
+  1. `getTradingRuleByInstrumentId`: tradingRule + instrument 병렬 조회
+  2. `validateOrder`: markPrice 병렬 조회 추가 (Promise.all)
+  3. `calcOrderCost`: markPrice 옵셔널 파라미터 추가 (Redis 중복 조회 제거)
+  4. `validateMinMaxPrice`: 시그니처 변경 (3개 파라미터 추가로 중복 조회 제거)
+- **보안 수정** (security-engineer 분석):
+  - [HIGH] markPrice null/NaN 처리 (`??` → 명시적 체크)
+  - [HIGH] markPrice 빈 문자열 처리 강화
+  - [MEDIUM] instrument null 체크 추가
+- **수정 파일**:
+  - `src/modules/trading-rules/trading-rule.service.ts`
+  - `src/modules/order/order.service.ts`
+  - `src/modules/order/usecase/save-order-from-client-v2.usecase.ts`
+- **예상 효과**:
+  - 응답 시간: 4-7ms 감소
+  - TPS: ~367 → ~450-550 TPS (+22-50%)
+- **검증**:
+  - ✅ TypeScript 빌드 성공
+  - ✅ security-engineer 보안 검토 완료
+
+---
+
+#### [2026-02-07_11-44-46] 캐시 무효화 및 TPS 최적화
 - **상태**: ✅ 완료
 - **파일**: `2026-02-07_11-44-46_cache-invalidation-tps-optimization.md`
 - **작업 내용**:
@@ -168,7 +193,9 @@
 ```
 history/
 ├── INDEX.md (이 파일)
-├── 2026-02-07_08-30-00_TPS-Optimization-4-Steps.md ⭐ [최신]
+├── 2026-02-07_15-12-07_parallel-query-optimization.md ⭐ [최신]
+├── 2026-02-07_11-44-46_cache-invalidation-tps-optimization.md
+├── 2026-02-07_08-30-00_TPS-Optimization-4-Steps.md
 ├── 2026-02-02_06-53-13_Future-Event-V2-Testing-And-Verification.md
 ├── 2026-02-02_06-53-13_Matching-Engine-And-OrderRouter-Integration.md
 ├── 2026-01-31_09-34-46_Future-Event-V2-AWS-EKS-Deployment.md

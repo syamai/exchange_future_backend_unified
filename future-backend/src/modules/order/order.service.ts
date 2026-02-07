@@ -1004,8 +1004,9 @@ export class OrderService extends BaseEngineService {
     leverage: number;
     instrument: InstrumentEntity;
     isCoinM: boolean;
+    markPrice?: string; // Optional: pass from caller to avoid Redis lookup
   }): Promise<BigNumber> {
-    const { order, position, leverage, instrument, isCoinM } = data;
+    const { order, position, leverage, instrument, isCoinM, markPrice: markPriceParam } = data;
     const accountId = order.accountId;
     const inputPrice = new BigNumber(order.price);
     // the system always create new position when place a first order
@@ -1020,9 +1021,22 @@ export class OrderService extends BaseEngineService {
     const marBuy = new BigNumber(position?.marBuy ?? 0);
     const marSel = new BigNumber(position?.marSel ?? 0);
 
-    // Compute mulBuy 
+    // Compute mulBuy - use passed markPrice if available to avoid Redis lookup
     let mulBuy = null;
-    const markPrice = new BigNumber(await this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`)) ?? new BigNumber(0);
+    let markPrice: BigNumber;
+
+    // Validate markPrice to prevent NaN in financial calculations
+    if (markPriceParam && markPriceParam.trim() !== '') {
+      markPrice = new BigNumber(markPriceParam);
+    } else {
+      const redisMarkPrice = await this.redisClient.getInstance().get(`${ORACLE_PRICE_PREFIX}${instrument.symbol}`);
+      markPrice = redisMarkPrice ? new BigNumber(redisMarkPrice) : new BigNumber(0);
+    }
+
+    // Safety check: prevent NaN or zero from corrupting calculations
+    if (markPrice.isNaN() || markPrice.isLessThanOrEqualTo(0)) {
+      markPrice = new BigNumber(0);
+    }
     if (isCoinM) {
       // MulBuy = 1/(Input price * Leverage) + (1/ Mark price - 1/ Input price) * (1 + 1/ Leverage)
       // transform to avoid division

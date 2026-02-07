@@ -307,80 +307,90 @@ export class SaveOrderFromClientV2UseCase {
       tmpId: tmpOrderId,
     };
 
-    // Handle stop loss and take profit orders in parallel
-    const tpSlPromises: Promise<OrderEntity | null>[] = [];
+    // Phase 1: Build TP/SL orders for batch insert
+    const tpSlOrders: Partial<OrderEntity>[] = [];
+    let stopLossOrderId: number | null = null;
+    let takeProfitOrderId: number | null = null;
 
     if (body.stopLoss) {
-      tpSlPromises.push(
-        this.orderRepoMaster.save({
-          ...body,
-          accountId: account.id,
-          userId: account.userId,
-          side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
-          tpSLPrice: body.stopLoss,
-          trigger: unsavedOrder.stopLossTrigger,
-          orderValue: "0",
-          tpSLType: TpSlType.STOP_MARKET,
-          stopLoss: null,
-          takeProfit: null,
-          price: null,
-          type: OrderType.MARKET,
-          asset: unsavedOrder.asset,
-          leverage: unsavedOrder.leverage,
-          marginMode: unsavedOrder.marginMode,
-          timeInForce: OrderTimeInForce.IOC,
-          isHidden: true,
-          stopCondition: unsavedOrder.stopLossCondition,
-          isReduceOnly: true,
-          isTpSlOrder: true,
-          contractType: unsavedOrder.contractType,
-          isPostOnly: false,
-          userEmail: account.userEmail,
-          originalCost: "0",
-          originalOrderMargin: "0",
-        })
-      );
-    } else {
-      tpSlPromises.push(Promise.resolve(null));
+      tpSlOrders.push({
+        ...body,
+        status: OrderStatus.PENDING,
+        accountId: account.id,
+        userId: account.userId,
+        side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
+        tpSLPrice: body.stopLoss,
+        trigger: unsavedOrder.stopLossTrigger,
+        orderValue: "0",
+        tpSLType: TpSlType.STOP_MARKET,
+        stopLoss: null,
+        takeProfit: null,
+        price: null,
+        type: OrderType.MARKET,
+        asset: unsavedOrder.asset,
+        leverage: unsavedOrder.leverage,
+        marginMode: unsavedOrder.marginMode,
+        timeInForce: OrderTimeInForce.IOC,
+        isHidden: true,
+        stopCondition: unsavedOrder.stopLossCondition,
+        isReduceOnly: true,
+        isTpSlOrder: true,
+        contractType: unsavedOrder.contractType,
+        isPostOnly: false,
+        userEmail: account.userEmail,
+        originalCost: "0",
+        originalOrderMargin: "0",
+      });
     }
 
     if (body.takeProfit) {
-      tpSlPromises.push(
-        this.orderRepoMaster.save({
-          ...body,
-          accountId: account.id,
-          userId: account.userId,
-          side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
-          tpSLPrice: body.takeProfit,
-          trigger: unsavedOrder.takeProfitTrigger,
-          orderValue: "0",
-          tpSLType: TpSlType.TAKE_PROFIT_MARKET,
-          stopLoss: null,
-          takeProfit: null,
-          price: null,
-          type: OrderType.MARKET,
-          asset: unsavedOrder.asset,
-          leverage: unsavedOrder.leverage,
-          marginMode: unsavedOrder.marginMode,
-          timeInForce: OrderTimeInForce.IOC,
-          isHidden: true,
-          stopCondition: unsavedOrder.takeProfitCondition,
-          isReduceOnly: true,
-          isTpSlOder: true,
-          contractType: unsavedOrder.contractType,
-          isPostOnly: false,
-          userEmail: account.userEmail,
-          originalCost: "0",
-          originalOrderMargin: "0",
-        })
-      );
-    } else {
-      tpSlPromises.push(Promise.resolve(null));
+      tpSlOrders.push({
+        ...body,
+        status: OrderStatus.PENDING,
+        accountId: account.id,
+        userId: account.userId,
+        side: side === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY,
+        tpSLPrice: body.takeProfit,
+        trigger: unsavedOrder.takeProfitTrigger,
+        orderValue: "0",
+        tpSLType: TpSlType.TAKE_PROFIT_MARKET,
+        stopLoss: null,
+        takeProfit: null,
+        price: null,
+        type: OrderType.MARKET,
+        asset: unsavedOrder.asset,
+        leverage: unsavedOrder.leverage,
+        marginMode: unsavedOrder.marginMode,
+        timeInForce: OrderTimeInForce.IOC,
+        isHidden: true,
+        stopCondition: unsavedOrder.takeProfitCondition,
+        isReduceOnly: true,
+        isTpSlOrder: true,  // Fixed typo: 'isTpSlOder' -> 'isTpSlOrder'
+        contractType: unsavedOrder.contractType,
+        isPostOnly: false,
+        userEmail: account.userEmail,
+        originalCost: "0",
+        originalOrderMargin: "0",
+      });
     }
 
+    // Phase 1: Batch INSERT for TP/SL orders (1 DB round-trip instead of 2)
     start = Date.now();
-    [stopLossOrder, takeProfitOrder] = await Promise.all(tpSlPromises);
-    timings['4_saveTpSlOrders'] = Date.now() - start;
+    if (tpSlOrders.length > 0) {
+      const insertResult = await this.orderRepoMaster.insert(tpSlOrders);
+      // Extract generated IDs from insert result
+      let idx = 0;
+      if (body.stopLoss) {
+        stopLossOrderId = insertResult.identifiers[idx].id;
+        stopLossOrder = { ...tpSlOrders[idx], id: stopLossOrderId } as OrderEntity;
+        idx++;
+      }
+      if (body.takeProfit) {
+        takeProfitOrderId = insertResult.identifiers[idx].id;
+        takeProfitOrder = { ...tpSlOrders[idx], id: takeProfitOrderId } as OrderEntity;
+      }
+    }
+    timings['4_batchInsertTpSl'] = Date.now() - start;
 
     if (unsavedOrder.type === OrderType.MARKET) {
       // Check to pre-creating orders
@@ -403,15 +413,20 @@ export class SaveOrderFromClientV2UseCase {
       timings['5b_createDefaultOrders'] = Date.now() - start;
     }
 
-    const newTmpOrder = {
-      ...unsavedOrder,
-      stopLossOrderId: stopLossOrder?.id ?? null,
-      takeProfitOrderId: takeProfitOrder?.id ?? null,
-    };
-
+    // Phase 2: Insert main order with FK references to TP/SL
     start = Date.now();
-    const newOrder = await this.orderRepoMaster.save(newTmpOrder);
-    timings['6_saveMainOrder'] = Date.now() - start;
+    const mainOrderInsertResult = await this.orderRepoMaster.insert({
+      ...unsavedOrder,
+      stopLossOrderId,
+      takeProfitOrderId,
+    });
+    const newOrder = {
+      ...unsavedOrder,
+      id: mainOrderInsertResult.identifiers[0].id,
+      stopLossOrderId,
+      takeProfitOrderId,
+    } as OrderEntity;
+    timings['6_insertMainOrder'] = Date.now() - start;
 
     this.orderService.removeEmptyValues(newOrder);
 
